@@ -47,7 +47,10 @@ namespace
 		for (const auto& entry : entries)
 		{
 			// Copy the shader identifier that was previously obtained with vkGetRayTracingShaderGroupHandlesKHR.
+			printf("RTV: Copying %d from %p to %p\n", handleSize, shaderHandleStorage + entry.GroupIndex * handleSize, pDst);
 			std::memcpy(pDst, shaderHandleStorage + entry.GroupIndex * handleSize, handleSize);
+
+			printf("RTV: Copying %d from %p to %p\n", entry.InlineData.size(), entry.InlineData.data(), pDst + handleSize);
 			std::memcpy(pDst + handleSize, entry.InlineData.data(), entry.InlineData.size());
 
 			pDst += entrySize;
@@ -95,7 +98,7 @@ ShaderBindingTable::ShaderBindingTable(
 	const size_t groupCount = rayGenPrograms.size() + missPrograms.size() + hitGroups.size();
 	std::vector<uint8_t> shaderHandleStorage(groupCount * handleSize);
 
-	printf("RTV: Get ray tracing shader group handles... group count: %ld; handle size: %d\n", groupCount, handleSize);
+	printf("RTV: Get ray tracing shader group handles... group count: %ld; handle size: %d; sbt size: %d\n", groupCount, handleSize, sbtSize);
 	Check(deviceProcedures.vkGetRayTracingShaderGroupHandlesKHR(
 		device.Handle(), 
 		rayTracingPipeline.Handle(), 
@@ -108,11 +111,11 @@ ShaderBindingTable::ShaderBindingTable(
 	// first the ray generation, then the miss shaders, and finally the set of hit groups.
 	auto* pData = static_cast<uint8_t*>(bufferMemory_->Map(0, sbtSize));
 
-	printf("RTV: CopyShaderData (size %ld) from %p to %p for raygen shader\n", rayGenEntrySize_, shaderHandleStorage.data(), pData);
+	printf("RTV: CopyShaderData (%d entries x size %ld) for raygen shader\n", rayGenPrograms.size(), rayGenEntrySize_);
 	pData += CopyShaderData(pData, rayTracingProperties, rayGenPrograms, rayGenEntrySize_, shaderHandleStorage.data());
-	printf("RTV: CopyShaderData (size %ld) from %p to %p for miss shader\n", missEntrySize_, shaderHandleStorage.data(), pData);
+	printf("RTV: CopyShaderData (%d entries x size %ld) for miss shader\n", missPrograms.size(), missEntrySize_);
 	pData += CopyShaderData(pData, rayTracingProperties, missPrograms, missEntrySize_, shaderHandleStorage.data());
-	printf("RTV: CopyShaderData (size %ld) from %p to %p for hit shader\n", hitGroupEntrySize_, shaderHandleStorage.data(), pData);
+	printf("RTV: CopyShaderData (%d entries x size %ld) for hit shader\n", hitGroups.size(), hitGroupEntrySize_);
 	         CopyShaderData(pData, rayTracingProperties, hitGroups, hitGroupEntrySize_, shaderHandleStorage.data());
 
 	bufferMemory_->Unmap();
