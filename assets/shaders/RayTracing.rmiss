@@ -22,4 +22,5 @@ void main()
 	{
 		Ray.ColorAndDistance = vec4(0, 0, 0, -1);
 	}
+	Ray.valid = 10;
 }
