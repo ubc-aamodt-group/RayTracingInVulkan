@@ -1,4 +1,4 @@
-# Blender 3.5.1
+# Blender 3.4.0
 # www.blender.org
 mtllib BezierCurve_026.mtl
 o BezierCurve.026
@@ -738,7 +738,7 @@ vt 0.000000 1.000000
 vt 0.000000 0.000000
 vt 0.000000 0.437500
 s 1
-usemtl BezierCurve.026_BAKED
+usemtl wood-direction.003
 f 1/1/1 17/18/2 32/34/3 16/17/4
 f 2/3/5 18/20/6 17/19/2 1/2/1
 f 3/4/7 19/21/8 18/20/6 2/3/5
