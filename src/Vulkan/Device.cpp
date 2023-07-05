@@ -56,6 +56,9 @@ Device::Device(
 	//const auto transferFamily = FindQueue(queueFamilies, "transfer", VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
 
 	// Find the presentation queue (usually the same as graphics queue).
+	#ifdef OFFSCREEN_RENDERING
+	const auto presentFamily = graphicsFamily;
+	#else
 	const auto presentFamily = std::find_if(queueFamilies.begin(), queueFamilies.end(), [&](const VkQueueFamilyProperties& queueFamily)
 	{
 		VkBool32 presentSupport = false;
@@ -63,6 +66,7 @@ Device::Device(
 		vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface.Handle(), &presentSupport);
 		return queueFamily.queueCount > 0 && presentSupport;
 	});
+	#endif
 
 	if (presentFamily == queueFamilies.end())
 	{

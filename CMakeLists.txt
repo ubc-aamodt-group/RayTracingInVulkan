@@ -19,6 +19,8 @@ endforeach()
 
 set (CMAKE_CXX_STANDARD 17)
 
+# add_definitions(-DOFFSCREEN_RENDERING)
+
 if (AllowProcedurals)
 	add_definitions(-DUSE_PROCEDURALS)
 endif ()
@@ -42,6 +44,7 @@ if (UNIX)
 	
 	add_definitions(-DUNIX)
 	add_compile_options("-Wall")
+	add_compile_options("-g")
 	add_compile_options("-fvisibility=hidden")
 	
 	find_package(Backtrace REQUIRED)

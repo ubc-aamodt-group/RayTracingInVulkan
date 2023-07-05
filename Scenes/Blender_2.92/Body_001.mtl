@@ -1,0 +1,23 @@
+# Blender 3.3.1 MTL File: 'Blender 2.blend'
+# www.blender.org
+
+newmtl Feathers
+Ns 360.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+
+newmtl Skin
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.330303 0.330303 0.330303
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Sino_NEW_1001_Diffuse.png
+map_Bump -bm 1.000000 Sino_NEW_1001_Normal.png

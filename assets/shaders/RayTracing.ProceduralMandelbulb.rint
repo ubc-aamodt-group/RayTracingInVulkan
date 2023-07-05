@@ -1,0 +1,184 @@
+#version 460
+#extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_ray_tracing : require
+// #extension GL_EXT_debug_printf : enable
+
+#define ITER_COUNT 15
+
+layout(binding = 12) readonly buffer MandelbulbArray { vec4[] Mandelbulbs; };
+
+hitAttributeEXT vec4 Sphere;
+
+float _fact(float x)
+{
+	float r = 1.;
+
+	for (float k = 1.; k <= x; k = k + 1.)
+	{
+		r = r * k;
+	}
+
+	return r;
+}
+
+float _cos(float x)
+{
+	float r = 0.;
+
+	for (int i = 0; i < ITER_COUNT; i++)
+	{
+		float n = i;
+		r = r + pow(x, (2.*n)) * pow(-1., n)/_fact((2.*n));
+	}
+
+	return r;
+}
+
+float _sin(float x)
+{
+	float r = 0.;
+
+	for (int i = 0; i < ITER_COUNT; i++)
+	{
+		float n = i;
+		r = r + pow(x, (2.*n+1.)) * pow(-1., n)/_fact((2.*n+1.));
+	}
+
+	return r;
+}
+
+float _atan(float x)
+{
+	float r = 0.;
+
+	for (int i = 0; i < ITER_COUNT; i++)
+	{
+		float n = i;
+		r = r + pow(x, (2.*n+1.)) * pow(-1., n)/(2.*n+1.);
+	}
+
+	return r;
+}
+
+float _atan(float x, float y) { return _atan(x/y); }
+
+float _log(float x)
+{
+	float r = 0.;
+
+	for (int i = 0; i < ITER_COUNT; i++) 
+	{
+		float n = i;
+		float l = 2.*n - 1.;
+		r = r + 1./l * pow(((x - 1.) / (x + 1.)), l);
+	}
+
+	return 2. * r;
+}
+
+vec3 rotate( vec3 pos, float x, float y, float z )
+{
+	mat3 rotX = mat3( 1.0, 0.0, 0.0, 0.0, _cos( x ), -_sin( x ), 0.0, _sin( x ), _cos( x ) );
+	mat3 rotY = mat3( _cos( y ), 0.0, _sin( y ), 0.0, 1.0, 0.0, -_sin(y), 0.0, _cos(y) );
+	mat3 rotZ = mat3( _cos( z ), -_sin( z ), 0.0, _sin( z ), _cos( z ), 0.0, 0.0, 0.0, 1.0 );
+
+	return rotX * rotY * rotZ * pos;
+}
+
+vec2 sphere_inter(in vec3 sc, in float sr, in vec3 ro, in vec3 rd)
+{
+	vec3 oc = ro - sc;
+	float a = dot(rd, rd);
+	float b = 2. * dot(oc, rd);
+	float c = dot(oc, oc) - sr*sr;
+	float d = b*b - 4.*a*c;
+	float s = sqrt(d);
+	if (d < 0.) return vec2(-1., -1.);
+	return (-b + vec2(-s, s))/(2.*a);
+}
+
+float dist(in vec3 p)
+{
+	const float pi = 3.1415926535897932384626433832795;
+	p = rotate(p, _sin(.25*pi), _cos(.25*pi), 0.);
+	vec3 zn = vec3(p.xyz);
+	float m = dot(zn, zn);
+	float dz = 1.;
+
+	vec4 tp = vec4(abs(zn), m);
+	float h = 0.;
+
+	float n = 8.;
+
+	float th, phi, rad;
+	float _th, _phi, _rad;
+
+	for (int i = 0; i < 8; i++)
+	{
+		rad = length(zn);
+		if (rad > 2.) 
+		{
+		    h = 0.25*_log(m)*sqrt(m)/dz;
+		} 
+		else 
+		{
+		    dz = 8.*pow(m,3.5)*dz + 1.;
+		    
+		    th = _atan(length(zn.xy), zn.z);
+		    phi = _atan(zn.y, zn.x);
+
+		    _rad = pow(rad, n);
+		    _th = n * th;
+		    _phi = n * phi;
+
+		    zn.x = _rad * _sin(_th) * _cos(_phi);
+		    zn.y = _rad * _sin(_th) * _sin(_phi);
+		    zn.z = _rad * _cos(_th);
+		    zn += p;
+		}
+
+		m = dot(zn, zn);
+	}
+
+	return h;
+}
+
+float hit(in vec3 sc, in float sr, in vec3 ro, in vec3 rd)
+{
+	vec2 si = sphere_inter(sc, sr, ro, rd);
+	if (si.x < 0.)
+		return -1.;
+
+	float t = si.x;
+	float d = 1.;
+	for (int i = 0; i < 96; i++)
+	{
+		vec3 r = ro + t*rd;
+		d = dist(r - sc);
+		if (t > si.y) break; 
+		t += d;
+	}
+
+	if (t > si.y)
+		return -1.;
+
+	return t;
+}
+
+void main()
+{
+	const vec4 sphere = Mandelbulbs[gl_InstanceCustomIndexEXT];
+	const vec3 center = sphere.xyz;
+	const float radius = sphere.w;
+
+	// debugPrintfEXT("Mandelbulb rint\n");
+	const vec3 origin = gl_WorldRayOriginEXT;
+	const vec3 direction = gl_WorldRayDirectionEXT;
+	const float tMin = gl_RayTminEXT;
+	const float tMax = gl_RayTmaxEXT;
+
+	float tHit = hit(center, radius, origin, direction);
+	// float tHit = sphere_inter(center, radius, origin, direction).x;
+	reportIntersectionEXT(tHit, 0);
+}
+

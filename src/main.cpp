@@ -106,6 +106,7 @@ namespace
 		userSettings.AccumulateRays = true;
 		userSettings.NumberOfSamples = options.Samples;
 		userSettings.NumberOfBounces = options.Bounces;
+		userSettings.NumberOfShadows = options.ShadowRays;
 		userSettings.MaxNumberOfSamples = options.MaxSamples;
 
 		userSettings.ShaderType = options.ShaderType;

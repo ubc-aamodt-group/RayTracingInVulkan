@@ -1,0 +1,13 @@
+# Blender 3.3.1 MTL File: 'Blender 2.blend'
+# www.blender.org
+
+newmtl Teeth
+Ka 1.000000 1.000000 1.000000
+Ks 0.506061 0.506061 0.506061
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd teeth2_defaultMat_Diffuse.png
+map_Ns teeth2_defaultMat_Glossiness.png
+map_Bump -bm 1.000000 teeth2_defaultMat_Normal.png

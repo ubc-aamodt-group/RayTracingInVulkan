@@ -1,0 +1,13 @@
+# Blender 3.3.1 MTL File: 'Blender 2.blend'
+# www.blender.org
+
+newmtl Tree_trunk2
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.036364 0.036364 0.036364
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Ns moss_wood_rough_4k.png
+map_Bump -bm 1.000000 moss_wood_nor_4k.png

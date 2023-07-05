@@ -1,0 +1,17 @@
+# Blender 3.4.0 MTL File: 'Blender 2.83.blend'
+# www.blender.org
+
+newmtl pipe
+Ks 0.751515 0.751515 0.751515
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 3
+Pr 0.553030
+Pm 1.000000
+Ps 0.000000
+Pc 0.000000
+Pcr 0.030000
+aniso 0.000000
+anisor 0.000000
+map_Kd TexturesCom_GarbageContainers0014_M.jpg

@@ -1,0 +1,16 @@
+# Blender 3.4.0
+# www.blender.org
+mtllib Low_Drift_Complex_Steam_004.mtl
+o Low_Drift_Complex_Steam.004
+v 7.977553 5.023058 12.642998
+v 4.338500 4.936269 12.262175
+v 7.938771 6.649243 12.642984
+v 4.299718 6.562454 12.262161
+vn 0.1040 0.0025 -0.9946
+vt 0.000000 0.000000
+vt 1.000000 0.000000
+vt 0.000000 1.000000
+vt 1.000000 1.000000
+s 0
+usemtl Low_Drift_Complex_Steam
+f 1/1/1 2/2/1 4/4/1 3/3/1

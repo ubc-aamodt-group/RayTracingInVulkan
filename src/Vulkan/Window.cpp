@@ -52,6 +52,9 @@ namespace
 Window::Window(const WindowConfig& config) :
 	config_(config)
 {
+	#ifdef OFFSCREEN_RENDERING
+	window_ = nullptr;
+	#else
 	glfwSetErrorCallback(GlfwErrorCallback);
 
 	if (!glfwInit())
@@ -95,10 +98,12 @@ Window::Window(const WindowConfig& config) :
 	glfwSetCursorPosCallback(window_, GlfwCursorPositionCallback);
 	glfwSetMouseButtonCallback(window_, GlfwMouseButtonCallback);
 	glfwSetScrollCallback(window_, GlfwScrollCallback);
+	#endif
 }
 
 Window::~Window()
 {
+	#ifndef OFFSCREEN_RENDERING
 	if (window_ != nullptr)
 	{
 		glfwDestroyWindow(window_);
@@ -107,41 +112,61 @@ Window::~Window()
 
 	glfwTerminate();
 	glfwSetErrorCallback(nullptr);
+	#endif
 }
 
 float Window::ContentScale() const
 {
-	float xscale;
-	float yscale;
+	float xscale = 1.0f;
+	float yscale = 1.0f;
+
+	#ifndef OFFSCREEN_RENDERING
 	glfwGetWindowContentScale(window_, &xscale, &yscale);
+	#endif
 
 	return xscale;
 }
 
 VkExtent2D Window::FramebufferSize() const
 {
-	int width, height;
+	int width = config_.Width, height = config_.Height;
+
+	#ifndef OFFSCREEN_RENDERING
 	glfwGetFramebufferSize(window_, &width, &height);
+	#endif
+
 	return VkExtent2D{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 }
 
 VkExtent2D Window::WindowSize() const
 {
-	int width, height;
+	int width = config_.Width, height = config_.Height;
+
+	#ifndef OFFSCREEN_RENDERING
 	glfwGetWindowSize(window_, &width, &height);
+	#endif
+
 	return VkExtent2D{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 }
 
 const char* Window::GetKeyName(const int key, const int scancode) const
 {
+	#ifdef OFFSCREEN_RENDERING
+	return NULL;
+	#else
 	return glfwGetKeyName(key, scancode);
+	#endif
 }
 
 std::vector<const char*> Window::GetRequiredInstanceExtensions() const
 {
+	#ifdef OFFSCREEN_RENDERING
+	return std::vector<const char*>();
+	#else
 	uint32_t glfwExtensionCount = 0;
 	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 	return std::vector<const char*>(glfwExtensions, glfwExtensions + glfwExtensionCount);
+	#endif
 }
 
 double Window::GetTime() const
@@ -151,20 +176,30 @@ double Window::GetTime() const
 
 void Window::Close()
 {
+	#ifndef OFFSCREEN_RENDERING
 	glfwSetWindowShouldClose(window_, 1);
+	#endif
 }
 
 bool Window::IsMinimized() const
 {
+	#ifdef OFFSCREEN_RENDERING
+	return false;
+	#else
 	const auto size = FramebufferSize();
 	return size.height == 0 && size.width == 0;
+	#endif
 }
 
 void Window::Run()
 {
 	glfwSetTime(0.0);
 
+	#ifdef OFFSCREEN_RENDERING
+	while (true)
+	#else
 	while (!glfwWindowShouldClose(window_))
+	#endif
 	{
 		glfwPollEvents();
 
@@ -179,7 +214,9 @@ void Window::Run()
 
 void Window::WaitForEvents() const
 {
+	#ifndef OFFSCREEN_RENDERING
 	glfwWaitEvents();
+	#endif
 }
 
 }

@@ -1,0 +1,12 @@
+# Blender 3.3.1 MTL File: 'blender_3_3_lts_splash_by_piotr_krynski.blend'
+# www.blender.org
+
+newmtl Material.024
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.271362 0.225089 0.188913
+Ks 0.018182 0.018182 0.018182
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2

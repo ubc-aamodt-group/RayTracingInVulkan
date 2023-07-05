@@ -2,6 +2,7 @@
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_GOOGLE_include_directive : require
 #extension GL_EXT_ray_tracing : require
+#extension GL_EXT_debug_printf : enable
 #include "Material.glsl"
 
 layout(binding = 4) readonly buffer VertexArray { float Vertices[]; };
@@ -15,6 +16,7 @@ layout(binding = 8) uniform sampler2D[] TextureSamplers;
 
 hitAttributeEXT vec2 HitAttributes;
 rayPayloadInEXT RayPayload Ray;
+
 
 vec2 Mix(vec2 a, vec2 b, vec2 c, vec3 barycentrics)
 {
@@ -39,11 +41,15 @@ void main()
 
 	// Compute the ray hit point properties.
 	const vec3 barycentrics = vec3(1.0 - HitAttributes.x - HitAttributes.y, HitAttributes.x, HitAttributes.y);
-	const vec3 normal = normalize(Mix(v0.Normal, v1.Normal, v2.Normal, barycentrics));
+	vec3 normal = normalize(Mix(v0.Normal, v1.Normal, v2.Normal, barycentrics));
+	if (dot(normal, gl_WorldRayDirectionEXT) > 0.0f) {
+		normal = -1.0f * normal;
+	}
 	const vec2 texCoord = Mix(v0.TexCoord, v1.TexCoord, v2.TexCoord, barycentrics);
 
 	Ray = Scatter(material, gl_WorldRayDirectionEXT, normal, texCoord, gl_HitTEXT, Ray.RandomSeed);
     
     // Reuse ScatterDirection xyz to represent intersection point
     Ray.ScatterDirection.xyz = gl_WorldRayOriginEXT + gl_HitTEXT * gl_WorldRayDirectionEXT;
+	Ray.SurfaceNormal = normal;
 }

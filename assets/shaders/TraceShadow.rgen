@@ -3,7 +3,7 @@
 #extension GL_ARB_shader_clock : require
 #extension GL_GOOGLE_include_directive : require
 #extension GL_EXT_ray_tracing : require
-// #extension GL_EXT_debug_printf : enable
+#extension GL_EXT_debug_printf : enable
 
 #include "Random.glsl"
 #include "RayPayload.glsl"
@@ -41,7 +41,7 @@ void main()
 		vec3 hitColor = vec3(0, 0, 0);
 
         const float tMin = 0.001;
-        const float tMax = 10000.0;
+        float tMax = 10000.0;
     
         // Trace primary ray
         traceRayEXT(
@@ -57,39 +57,39 @@ void main()
 			pixelColor += hitColor;
 			continue;
 		}
-        			
-		for (uint j = 0; j < 1; j++) {
-			// Trace shadow ray (TODO: Add more shadow rays)
+		
+		vec3 intersectionPoint = origin.xyz + t * direction.xyz + Ray.SurfaceNormal * 0.001f;
+		vec3 primary_intersection_normal = Ray.SurfaceNormal;
+        
+		// Trace shadow ray
+		for (uint j = 0; j < Camera.NumberOfShadows; j++) {
+			// vec3 intersectionPoint = Ray.ScatterDirection.xyz + Ray.SurfaceNormal * 0.001f;
 			const float shadowScale = 0.3;
-
-			// // TODO: Figure out light sampling
-			// Randomly choose a light
-			vec3 lightPoint;
-			const float randomLight = RandomFloat(Ray.RandomSeed);
-			offset = Camera.Aperture/2 * RandomInUnitDisk(Ray.RandomSeed);
-			
-			if (randomLight < 0.25) {
-				lightPoint = vec3(-1.0f * origin.x, -1.0f * origin.y, 10.0f) * vec3(offset, 1);;
-			} else if (randomLight < 0.5) {
-				lightPoint = vec3(-1.0f * origin.x, origin.y, origin.z) * vec3(offset, 1);;
-			} else if (randomLight < 0.75) {
-				lightPoint = vec3(origin.x, origin.y, 0.0f) * vec3(offset, 1);;
-			} else {
-				lightPoint = vec3(origin.x, -1.0f * origin.y, origin.z) * vec3(offset, 1);;
+			vec3 shadowDirection; 
+		
+			// Outdoor scenes use directional light
+			if (Camera.HasSky) {
+				shadowDirection = vec3(0.5, 0.5, 1);
+				shadowDirection = normalize(shadowDirection);
 			}
-			
-			vec3 intersectionPoint = Ray.ScatterDirection.xyz;
-			vec3 shadowDirection = lightPoint - intersectionPoint;
-			shadowDirection = normalize(shadowDirection);
 
-			vec3 intersectionOrigin = intersectionPoint + shadowDirection * 0.001f;
-			
-			// t >= 0 to trace shadow ray, set to t = -1 on miss
-			traceRayEXT(Scene, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT, 0xff, 
-			0 /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/, 
-			intersectionOrigin, tMin, shadowDirection, tMax, 0 /*payload*/);
+			else {
+				vec3 light = Camera.LightPosition + Camera.LightRadius * RandomInUnitSphere(Ray.RandomSeed);
+				shadowDirection = light - intersectionPoint;
+				tMax = length(shadowDirection);
+				shadowDirection = normalize(shadowDirection);
+			}
 
-			const float occluded = Ray.ColorAndDistance.w;
+			float occluded = 1;
+			// Only accept shadow rays away from surface
+			if (dot(shadowDirection, primary_intersection_normal) > 0) {
+				// t >= 0 to trace shadow ray, set to t = -1 on miss
+				traceRayEXT(Scene, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT, 0xff, 
+				0 /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/, 
+				intersectionPoint, tMin, shadowDirection, tMax, 0 /*payload*/);
+
+				occluded = Ray.ColorAndDistance.w;
+			}
 
 			// Found occlusion
 			if (occluded > 0) {

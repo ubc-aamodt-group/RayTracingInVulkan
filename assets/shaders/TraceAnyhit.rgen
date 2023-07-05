@@ -41,7 +41,7 @@ void main()
 		vec3 hitColor = vec3(0, 0, 0);
 
         const float tMin = 0.001;
-        const float tMax = 10000.0;
+        float tMax = 10000.0;
     
         // Trace primary ray
         traceRayEXT(
@@ -59,36 +59,38 @@ void main()
 		}
 
         const float shadowScale = 0.3;
-        const float AOScale = 0.9;
-        const float AODist = 5.0;
+        const float AOScale = 0.7;
+        const float AODist = 10.0;
 
 		vec3 intersectionPoint = Ray.ScatterDirection.xyz;
-		for (uint j = 0; j < 2; j++) {
-			vec3 lightPoint;
-			const float randomLight = RandomFloat(Ray.RandomSeed);
-			
-			if (randomLight < 0.25) {
-				lightPoint = vec3(-1.0f * origin.x, -1.0f * origin.y, 10.0f);
-			} else if (randomLight < 0.5) {
-				lightPoint = vec3(-1.0f * origin.x, origin.y, origin.z);
-			} else if (randomLight < 0.75) {
-				lightPoint = vec3(origin.x, origin.y, 0.0f);
-			} else {
-				lightPoint = vec3(origin.x, -1.0f * origin.y, origin.z);
+		for (uint j = 0; j < Camera.NumberOfShadows; j++) {
+			vec3 intersectionPoint = Ray.ScatterDirection.xyz + Ray.SurfaceNormal * 0.001f;
+			const float shadowScale = 0.3;
+			vec3 shadowDirection; 
+		
+			// Outdoor scenes use directional light
+			if (Camera.HasSky) {
+				shadowDirection = vec3(0.5, 0.5, 1);
+				shadowDirection = normalize(shadowDirection);
 			}
-			
-			vec3 intersectionPoint = Ray.ScatterDirection.xyz;
-			vec3 shadowDirection = lightPoint - intersectionPoint;
-			shadowDirection = normalize(shadowDirection);
 
-			vec3 intersectionOrigin = intersectionPoint + shadowDirection * 0.001f;
-			
-			// t >= 0 to trace shadow ray, set to t = -1 on miss
-			traceRayEXT(Scene, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT, 0xff, 
-			0 /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/, 
-			intersectionOrigin, tMin, shadowDirection, tMax, 0 /*payload*/);
+			else {
+				vec3 light = Camera.LightPosition + Camera.LightRadius * RandomInUnitSphere(Ray.RandomSeed);
+				shadowDirection = light - intersectionPoint;
+				tMax = length(shadowDirection);
+				shadowDirection = normalize(shadowDirection);
+			}
 
-			const float occluded = Ray.ColorAndDistance.w;
+			float occluded = 1;
+			// Only accept shadow rays away from surface
+			if (dot(shadowDirection, Ray.SurfaceNormal) > 0) {
+				// t >= 0 to trace shadow ray, set to t = -1 on miss
+				traceRayEXT(Scene, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT, 0xff, 
+				0 /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/, 
+				intersectionPoint, tMin, shadowDirection, tMax, 0 /*payload*/);
+
+				occluded = Ray.ColorAndDistance.w;
+			}
 
 			// Found occlusion
 			if (occluded > 0) {
@@ -96,12 +98,14 @@ void main()
 			}
 		}
         
-        // Trace 16 AO rays
-		for (uint j = 0; j < 16; j++) {
+		for (uint j = 0; j < Camera.NumberOfShadows; j++) {
             vec3 shadowDirection = RandomInUnitSphere(Ray.RandomSeed);
 			shadowDirection = normalize(shadowDirection);
 
-			vec3 intersectionOrigin = intersectionPoint + shadowDirection * 0.001f;
+			if (dot(shadowDirection, Ray.SurfaceNormal) <= 0)
+				shadowDirection = -1.0f * shadowDirection;
+
+			vec3 intersectionOrigin = intersectionPoint + shadowDirection * 0.01;
 
 			// t >= 0 to trace shadow ray, set to t = -1 on miss
             // Use AODist as tMax

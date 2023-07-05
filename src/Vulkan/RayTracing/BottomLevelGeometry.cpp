@@ -25,7 +25,7 @@ void BottomLevelGeometry::AddGeometryTriangles(
 	geometry.geometry.triangles.indexData.deviceAddress = scene.IndexBuffer().GetDeviceAddress();
 	geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
 	geometry.geometry.triangles.transformData = {};
-	geometry.flags = isOpaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0;
+	geometry.flags = isOpaque ? VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR : 0;
 
 	VkAccelerationStructureBuildRangeInfoKHR buildOffsetInfo = {};
 	buildOffsetInfo.firstVertex = vertexOffset / sizeof(Assets::Vertex);
@@ -63,4 +63,84 @@ void BottomLevelGeometry::AddGeometryAabb(
 	buildOffsetInfo_.emplace_back(buildOffsetInfo);
 }
 
+void BottomLevelGeometry::AddGeometryCubeAabb(
+	const Assets::Scene& scene,
+	const uint32_t aabbOffset,
+	const uint32_t aabbCount,
+	const bool isOpaque)
+{
+	VkAccelerationStructureGeometryKHR geometry = {};
+	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+	geometry.pNext = nullptr;
+	geometry.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
+	geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
+	geometry.geometry.aabbs.pNext = nullptr;
+	geometry.geometry.aabbs.data.deviceAddress = scene.AabbCubeBuffer().GetDeviceAddress();
+	geometry.geometry.aabbs.stride = sizeof(VkAabbPositionsKHR);
+	geometry.flags = isOpaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0;
+
+	VkAccelerationStructureBuildRangeInfoKHR buildOffsetInfo = {};
+	buildOffsetInfo.firstVertex = 0;
+	buildOffsetInfo.primitiveOffset = aabbOffset;
+	buildOffsetInfo.primitiveCount = aabbCount;
+	buildOffsetInfo.transformOffset = 0;
+
+	geometry_.emplace_back(geometry);
+	buildOffsetInfo_.emplace_back(buildOffsetInfo);
 }
+
+void BottomLevelGeometry::AddGeometryCylinderAabb(
+	const Assets::Scene& scene,
+	const uint32_t aabbOffset,
+	const uint32_t aabbCount,
+	const bool isOpaque)
+{
+	VkAccelerationStructureGeometryKHR geometry = {};
+	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+	geometry.pNext = nullptr;
+	geometry.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
+	geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
+	geometry.geometry.aabbs.pNext = nullptr;
+	geometry.geometry.aabbs.data.deviceAddress = scene.AabbCylinderBuffer().GetDeviceAddress();
+	geometry.geometry.aabbs.stride = sizeof(VkAabbPositionsKHR);
+	geometry.flags = isOpaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0;
+
+	VkAccelerationStructureBuildRangeInfoKHR buildOffsetInfo = {};
+	buildOffsetInfo.firstVertex = 0;
+	buildOffsetInfo.primitiveOffset = aabbOffset;
+	buildOffsetInfo.primitiveCount = aabbCount;
+	buildOffsetInfo.transformOffset = 0;
+
+	geometry_.emplace_back(geometry);
+	buildOffsetInfo_.emplace_back(buildOffsetInfo);
+}
+
+void BottomLevelGeometry::AddGeometryMandelbulbAabb(
+	const Assets::Scene& scene,
+	const uint32_t aabbOffset,
+	const uint32_t aabbCount,
+	const bool isOpaque)
+{
+	assert(0);
+	// VkAccelerationStructureGeometryKHR geometry = {};
+	// geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+	// geometry.pNext = nullptr;
+	// geometry.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
+	// geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
+	// geometry.geometry.aabbs.pNext = nullptr;
+	// geometry.geometry.aabbs.data.deviceAddress = scene.AabbMandelbulbBuffer().GetDeviceAddress();
+	// geometry.geometry.aabbs.stride = sizeof(VkAabbPositionsKHR);
+	// geometry.flags = isOpaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0;
+
+	// VkAccelerationStructureBuildRangeInfoKHR buildOffsetInfo = {};
+	// buildOffsetInfo.firstVertex = 0;
+	// buildOffsetInfo.primitiveOffset = aabbOffset;
+	// buildOffsetInfo.primitiveCount = aabbCount;
+	// buildOffsetInfo.transformOffset = 0;
+
+	// geometry_.emplace_back(geometry);
+	// buildOffsetInfo_.emplace_back(buildOffsetInfo);
+}
+
+}
+

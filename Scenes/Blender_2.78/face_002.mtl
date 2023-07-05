@@ -1,0 +1,12 @@
+# Blender 3.4.0 MTL File: 'Blenderman.blend'
+# www.blender.org
+
+newmtl skin_face
+Kd 0.694484 0.694484 0.694484
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+Pr 0.500000
+Pm 0.000000

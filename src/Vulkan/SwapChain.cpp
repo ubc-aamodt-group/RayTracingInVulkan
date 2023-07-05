@@ -1,6 +1,7 @@
 #include "SwapChain.hpp"
 #include "Device.hpp"
 #include "Enumerate.hpp"
+#include "Image.hpp"
 #include "ImageView.hpp"
 #include "Instance.hpp"
 #include "Surface.hpp"
@@ -15,6 +16,37 @@ SwapChain::SwapChain(const class Device& device, const VkPresentModeKHR presentM
 	physicalDevice_(device.PhysicalDevice()),
 	device_(device)
 {
+	#ifdef OFFSCREEN_RENDERING
+	VkExtent2D extent = device.Surface().Instance().Window().FramebufferSize();
+
+	// default surface format
+	VkSurfaceFormatKHR surfaceFormat = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+
+	Image swapImg(device, extent, surfaceFormat.format);
+	std::vector<VkImage> images;
+	images.push_back(swapImg.Handle());
+
+	// Use pre-set values for offscreen rendering
+	minImageCount_ = 1u;
+	presentMode_ = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+	format_ = surfaceFormat.format;
+	extent_ = extent;
+	images_ = images;
+	imageViews_.reserve(images_.size());
+
+	for (const auto image : images_)
+	{
+		imageViews_.push_back(std::make_unique<ImageView>(device, image, format_, VK_IMAGE_ASPECT_COLOR_BIT));
+	}
+
+	const auto& debugUtils = device.DebugUtils();
+
+	for (size_t i = 0; i != images_.size(); ++i)
+	{
+		debugUtils.SetObjectName(images_[i], ("Swapchain Image #" + std::to_string(i)).c_str());
+		debugUtils.SetObjectName(imageViews_[i]->Handle(), ("Swapchain ImageView #" + std::to_string(i)).c_str());
+	}
+	#else
 	const auto details = QuerySwapChainSupport(device.PhysicalDevice(), device.Surface().Handle());
 	if (details.Formats.empty() || details.PresentModes.empty())
 	{
@@ -81,6 +113,7 @@ SwapChain::SwapChain(const class Device& device, const VkPresentModeKHR presentM
 		debugUtils.SetObjectName(images_[i], ("Swapchain Image #" + std::to_string(i)).c_str());
 		debugUtils.SetObjectName(imageViews_[i]->Handle(), ("Swapchain ImageView #" + std::to_string(i)).c_str());
 	}
+	#endif
 }
 
 SwapChain::~SwapChain()

@@ -1,0 +1,3 @@
+#! /bin/bash
+split --verbose -b49M Blender_2.90/fox_head.obj Blender_2.90/fox_head.obj.
+split --verbose -b49M Blender_2.77/Cube_1439.obj Blender_2.77/Cube_1439.obj.

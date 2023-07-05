@@ -48,4 +48,5 @@ void main()
 	const vec2 texCoord = GetSphereTexCoord(normal);
 
 	Ray = Scatter(material, gl_WorldRayDirectionEXT, normal, texCoord, gl_HitTEXT, Ray.RandomSeed);
+	Ray.SurfaceNormal = normal;
 }

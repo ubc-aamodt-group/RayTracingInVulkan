@@ -1,0 +1,14 @@
+# Blender 3.3.1 MTL File: 'Blender 2.81.blend'
+# www.blender.org
+
+newmtl Ceiling
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd BaseLowPoly_Techo_BaseColor.png
+map_Ns BaseLowPoly_Techo_Roughness.png
+map_refl BaseLowPoly_Techo_Metalness.png
+map_Bump -bm 1.000000 BaseLowPoly_Techo_Normal.png

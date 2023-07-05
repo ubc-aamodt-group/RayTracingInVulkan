@@ -1,0 +1,22 @@
+# Blender 3.4.0 MTL File: 'Blender 2.80.blend'
+# www.blender.org
+
+newmtl MAT_spring.button
+Kd 0.090630 0.052740 0.052740
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+Pr 1.000000
+Pm 0.000000
+
+newmtl MAT_spring.stitches_button
+Kd 0.090630 0.052740 0.052740
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+Pr 1.000000
+Pm 0.000000

@@ -1,0 +1,17 @@
+# Blender 3.4.0 MTL File: 'Blender 3_2.blend'
+# www.blender.org
+
+newmtl water
+Kd 0.041025 0.479822 0.800000
+Ks 0.439394 0.439394 0.439394
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 0.400000
+illum 6
+Pr 0.000000
+Pm 1.000000
+Ps 0.000000
+Pc 0.000000
+Pcr 0.030000
+aniso 0.000000
+anisor 0.000000

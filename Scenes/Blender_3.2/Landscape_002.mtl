@@ -1,0 +1,18 @@
+# Blender 3.4.0 MTL File: 'Blender 3_2.blend'
+# www.blender.org
+
+newmtl snow_02
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+Pm 0.000000
+Ps 0.000000
+Pc 0.000000
+Pcr 0.030000
+aniso 0.000000
+anisor 0.000000
+map_Kd -s 9.32999 9.32999 9.32999 snow_01_diff_2k.jpg
+map_Pr -s 9.32999 9.32999 9.32999 snow_01_rough_2k.jpg
+map_Bump -s 9.32999 9.32999 9.32999 -bm 1.000000 snow_01_nor_gl_2k.exr

@@ -44,6 +44,12 @@ namespace Assets {
 
 Model Model::LoadModel(const std::string& filename)
 {
+	std::vector<Texture> empty;
+	return LoadModel(filename, empty);
+}
+
+Model Model::LoadModel(const std::string& filename, std::vector<Texture>& sceneTextures)
+{
 	std::cout << "- loading '" << filename << "'... " << std::flush;
 
 	const auto timer = std::chrono::high_resolution_clock::now();
@@ -73,6 +79,15 @@ Model Model::LoadModel(const std::string& filename)
 
 		m.Diffuse = vec4(material.diffuse[0], material.diffuse[1], material.diffuse[2], 1.0);
 		m.DiffuseTextureId = -1;
+
+		const std::string tex_name = material.diffuse_texname;
+		if (!tex_name.empty())
+		{
+			const std::string texturePath = materialPath + "/" + tex_name;
+			m.DiffuseTextureId = sceneTextures.size();
+			sceneTextures.push_back(Texture::LoadTexture(texturePath, Vulkan::SamplerConfig()));
+		}
+
 
 		materials.emplace_back(m);
 	}
@@ -259,6 +274,139 @@ Model Model::CreateBox(const vec3& p0, const vec3& p1, const Material& material)
 		nullptr);
 }
 
+Model Model::CreateCube(const vec3& center, float radius, const Material& material, const bool isProcedural)
+{
+	vec3 p0;
+	vec3 p1;
+
+	p0.x = center.x - radius;
+	p0.y = center.y - radius;
+	p0.z = center.z - radius;
+
+	p1.x = center.x + radius;
+	p1.y = center.y + radius;
+	p1.z = center.z + radius;
+	
+	std::vector<Vertex> vertices =
+	{
+		Vertex{vec3(p0.x, p0.y, p0.z), vec3(-1, 0, 0), vec2(0), 0},
+		Vertex{vec3(p0.x, p0.y, p1.z), vec3(-1, 0, 0), vec2(0), 0},
+		Vertex{vec3(p0.x, p1.y, p1.z), vec3(-1, 0, 0), vec2(0), 0},
+		Vertex{vec3(p0.x, p1.y, p0.z), vec3(-1, 0, 0), vec2(0), 0},
+
+		Vertex{vec3(p1.x, p0.y, p1.z), vec3(1, 0, 0), vec2(0), 0},
+		Vertex{vec3(p1.x, p0.y, p0.z), vec3(1, 0, 0), vec2(0), 0},
+		Vertex{vec3(p1.x, p1.y, p0.z), vec3(1, 0, 0), vec2(0), 0},
+		Vertex{vec3(p1.x, p1.y, p1.z), vec3(1, 0, 0), vec2(0), 0},
+
+		Vertex{vec3(p1.x, p0.y, p0.z), vec3(0, 0, -1), vec2(0), 0},
+		Vertex{vec3(p0.x, p0.y, p0.z), vec3(0, 0, -1), vec2(0), 0},
+		Vertex{vec3(p0.x, p1.y, p0.z), vec3(0, 0, -1), vec2(0), 0},
+		Vertex{vec3(p1.x, p1.y, p0.z), vec3(0, 0, -1), vec2(0), 0},
+
+		Vertex{vec3(p0.x, p0.y, p1.z), vec3(0, 0, 1), vec2(0), 0},
+		Vertex{vec3(p1.x, p0.y, p1.z), vec3(0, 0, 1), vec2(0), 0},
+		Vertex{vec3(p1.x, p1.y, p1.z), vec3(0, 0, 1), vec2(0), 0},
+		Vertex{vec3(p0.x, p1.y, p1.z), vec3(0, 0, 1), vec2(0), 0},
+
+		Vertex{vec3(p0.x, p0.y, p0.z), vec3(0, -1, 0), vec2(0), 0},
+		Vertex{vec3(p1.x, p0.y, p0.z), vec3(0, -1, 0), vec2(0), 0},
+		Vertex{vec3(p1.x, p0.y, p1.z), vec3(0, -1, 0), vec2(0), 0},
+		Vertex{vec3(p0.x, p0.y, p1.z), vec3(0, -1, 0), vec2(0), 0},
+
+		Vertex{vec3(p1.x, p1.y, p0.z), vec3(0, 1, 0), vec2(0), 0},
+		Vertex{vec3(p0.x, p1.y, p0.z), vec3(0, 1, 0), vec2(0), 0},
+		Vertex{vec3(p0.x, p1.y, p1.z), vec3(0, 1, 0), vec2(0), 0},
+		Vertex{vec3(p1.x, p1.y, p1.z), vec3(0, 1, 0), vec2(0), 0},
+	};
+
+	std::vector<uint32_t> indices =
+	{
+		0, 1, 2, 0, 2, 3,
+		4, 5, 6, 4, 6, 7,
+		8, 9, 10, 8, 10, 11,
+		12, 13, 14, 12, 14, 15,
+		16, 17, 18, 16, 18, 19,
+		20, 21, 22, 20, 22, 23
+	};
+
+	return Model(
+		std::move(vertices),
+		std::move(indices),
+		std::vector<Material>{material},
+		nullptr,
+		isProcedural ? new Cube(center, radius) : nullptr);
+
+
+	//const int slices = 32;
+	//const int stacks = 16;
+
+	//std::vector<Vertex> vertices;
+	//std::vector<uint32_t> indices;
+
+	//const float pi = 3.14159265358979f;
+
+	//for (int j = 0; j <= stacks; ++j)
+	//{
+	//	const float j0 = pi * j / stacks;
+
+	//	// Vertex
+	//	const float v = radius * -std::sin(j0);
+	//	const float z = radius * std::cos(j0);
+
+	//	// Normals		
+	//	const float n0 = -std::sin(j0);
+	//	const float n1 = std::cos(j0);
+
+	//	for (int i = 0; i <= slices; ++i)
+	//	{
+	//		const float i0 = 2 * pi * i / slices;
+
+	//		const vec3 position(
+	//			center.x + v * std::sin(i0),
+	//			center.y + z,
+	//			center.z + v * std::cos(i0));
+
+	//		const vec3 normal(
+	//			n0 * std::sin(i0),
+	//			n1,
+	//			n0 * std::cos(i0));
+
+	//		const vec2 texCoord(
+	//			static_cast<float>(i) / slices,
+	//			static_cast<float>(j) / stacks);
+
+	//		vertices.push_back(Vertex{ position, normal, texCoord, 0 });
+	//	}
+	//}
+
+	//for (int j = 0; j < stacks; ++j)
+	//{
+	//	for (int i = 0; i < slices; ++i)
+	//	{
+	//		const auto j0 = (j + 0) * (slices + 1);
+	//		const auto j1 = (j + 1) * (slices + 1);
+	//		const auto i0 = i + 0;
+	//		const auto i1 = i + 1;
+
+	//		indices.push_back(j0 + i0);
+	//		indices.push_back(j1 + i0);
+	//		indices.push_back(j1 + i1);
+
+	//		indices.push_back(j0 + i0);
+	//		indices.push_back(j1 + i1);
+	//		indices.push_back(j0 + i1);
+	//	}
+	//}
+
+	//return Model(
+	//	std::move(vertices),
+	//	std::move(indices),
+	//	std::vector<Material>{material},
+	//	nullptr,
+	//	isProcedural ? new Cube(center, radius) : nullptr);
+}
+
 Model Model::CreateSphere(const vec3& center, float radius, const Material& material, const bool isProcedural)
 {
 	const int slices = 32;
@@ -329,6 +477,152 @@ Model Model::CreateSphere(const vec3& center, float radius, const Material& mate
 		isProcedural ? new Sphere(center, radius) : nullptr);
 }
 
+Model Model::CreateCylinder(const vec3& center, float radius, const Material& material, const bool isProcedural)
+{
+	//This crates wrong vertices and normals (copied from spheres). Only DiffuseLight material is supported as a result
+	const int slices = 32;
+	const int stacks = 16;
+	
+	std::vector<Vertex> vertices;
+	std::vector<uint32_t> indices;
+
+	const float pi = 3.14159265358979f;
+	
+	for (int j = 0; j <= stacks; ++j) 
+	{
+		const float j0 = pi * j / stacks;
+
+		// Vertex
+		const float v = radius * -std::sin(j0);
+		const float z = radius * std::cos(j0);
+		
+		// Normals		
+		const float n0 = -std::sin(j0);
+		const float n1 = std::cos(j0);
+
+		for (int i = 0; i <= slices; ++i) 
+		{
+			const float i0 = 2 * pi * i / slices;
+
+			const vec3 position(
+				center.x + v * std::sin(i0),
+				center.y + z,
+				center.z + v * std::cos(i0));
+			
+			const vec3 normal(
+				n0 * std::sin(i0),
+				n1,
+				n0 * std::cos(i0));
+
+			const vec2 texCoord(
+				static_cast<float>(i) / slices,
+				static_cast<float>(j) / stacks);
+
+			vertices.push_back(Vertex{ position, normal, texCoord, 0 });
+		}
+	}
+
+	for (int j = 0; j < stacks; ++j)
+	{
+		for (int i = 0; i < slices; ++i)
+		{
+			const auto j0 = (j + 0) * (slices + 1);
+			const auto j1 = (j + 1) * (slices + 1);
+			const auto i0 = i + 0;
+			const auto i1 = i + 1;
+			
+			indices.push_back(j0 + i0);
+			indices.push_back(j1 + i0);
+			indices.push_back(j1 + i1);
+			
+			indices.push_back(j0 + i0);
+			indices.push_back(j1 + i1);
+			indices.push_back(j0 + i1);
+		}
+	}
+
+	return Model(
+		std::move(vertices),
+		std::move(indices),
+		std::vector<Material>{material},
+		nullptr,
+		nullptr,
+		isProcedural ? new Cylinder(center, radius) : nullptr);
+}
+
+Model Model::CreateMandelbulb(const vec3& center, float radius, const Material& material, const bool isProcedural)
+{
+	const int slices = 64;
+	const int stacks = 32;
+	
+	std::vector<Vertex> vertices;
+	std::vector<uint32_t> indices;
+
+	const float pi = 3.14159265358979f;
+	
+	for (int j = 0; j <= stacks; ++j) 
+	{
+		const float j0 = pi * j / stacks;
+
+		// Vertex
+		const float v = radius * -std::sin(j0);
+		const float z = radius * std::cos(j0);
+		
+		// Normals		
+		const float n0 = -std::sin(j0);
+		const float n1 = std::cos(j0);
+
+		for (int i = 0; i <= slices; ++i) 
+		{
+			const float i0 = 2 * pi * i / slices;
+
+			const vec3 position(
+				center.x + v * std::sin(i0),
+				center.y + z,
+				center.z + v * std::cos(i0));
+			
+			const vec3 normal(
+				n0 * std::sin(i0),
+				n1,
+				n0 * std::cos(i0));
+
+			const vec2 texCoord(
+				static_cast<float>(i) / slices,
+				static_cast<float>(j) / stacks);
+
+			vertices.push_back(Vertex{ position, normal, texCoord, 0 });
+		}
+	}
+
+	for (int j = 0; j < stacks; ++j)
+	{
+		for (int i = 0; i < slices; ++i)
+		{
+			const auto j0 = (j + 0) * (slices + 1);
+			const auto j1 = (j + 1) * (slices + 1);
+			const auto i0 = i + 0;
+			const auto i1 = i + 1;
+			
+			indices.push_back(j0 + i0);
+			indices.push_back(j1 + i0);
+			indices.push_back(j1 + i1);
+			
+			indices.push_back(j0 + i0);
+			indices.push_back(j1 + i1);
+			indices.push_back(j0 + i1);
+		}
+	}
+
+	return Model(
+		std::move(vertices),
+		std::move(indices),
+		std::vector<Material>{material},
+		nullptr,
+		nullptr,
+		nullptr,
+		isProcedural ? new Mandelbulb(center, radius) : nullptr);
+}
+
 void Model::SetMaterial(const Material& material)
 {
 	if (materials_.size() != 1)
@@ -337,6 +631,18 @@ void Model::SetMaterial(const Material& material)
 	}
 
 	materials_[0] = material;
+}
+
+void Model::SetMaterial(const Material& material, int index)
+{
+	assert(materials_.size() > index);
+	materials_[index] = material;
+}
+
+void Model::SetAllMaterial(const Material& material)
+{
+	for(int i = 0; i < materials_.size(); i++)
+		materials_[i] = material;
 }
 
 void Model::Transform(const mat4& transform)
@@ -355,6 +661,36 @@ Model::Model(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices, st
 	indices_(std::move(indices)),
 	materials_(std::move(materials)),
 	procedural_(procedural)
+{
+}
+
+Model::Model(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices, std::vector<Material>&& materials, const class Procedural* procedural, const class Procedural* proceduralCube) :
+	vertices_(std::move(vertices)),
+	indices_(std::move(indices)),
+	materials_(std::move(materials)),
+	procedural_(procedural),
+	proceduralCube_(proceduralCube)
+{
+}
+
+Model::Model(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices, std::vector<Material>&& materials, const class Procedural* procedural, const class Procedural* proceduralCube, const class Procedural* proceduralCylinder) :
+	vertices_(std::move(vertices)),
+	indices_(std::move(indices)),
+	materials_(std::move(materials)),
+	procedural_(procedural),
+	proceduralCube_(proceduralCube),
+	proceduralCylinder_(proceduralCylinder)
+{
+}
+
+Model::Model(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices, std::vector<Material>&& materials, const class Procedural* procedural, const class Procedural* proceduralCube, const class Procedural* proceduralCylinder, const class Procedural* proceduralMandelbulb) :
+	vertices_(std::move(vertices)),
+	indices_(std::move(indices)),
+	materials_(std::move(materials)),
+	procedural_(procedural),
+	proceduralCube_(proceduralCube),
+	proceduralCylinder_(proceduralCylinder),
+	proceduralMandelbulb_(proceduralMandelbulb)
 {
 }
 

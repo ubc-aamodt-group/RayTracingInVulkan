@@ -45,11 +45,14 @@ Assets::UniformBufferObject RayTracer::GetUniformBufferObject(const VkExtent2D e
 	ubo.Projection[1][1] *= -1; // Inverting Y for Vulkan, https://matthewwellings.com/blog/the-new-vulkan-coordinate-system/
 	ubo.ModelViewInverse = glm::inverse(ubo.ModelView);
 	ubo.ProjectionInverse = glm::inverse(ubo.Projection);
+	ubo.LightPosition = init.LightPosition;
+	ubo.LightRadius = init.LightRadius;
 	ubo.Aperture = userSettings_.Aperture;
 	ubo.FocusDistance = userSettings_.FocusDistance;
 	ubo.TotalNumberOfSamples = totalNumberOfSamples_;
 	ubo.NumberOfSamples = numberOfSamples_;
 	ubo.NumberOfBounces = userSettings_.NumberOfBounces;
+	ubo.NumberOfShadows = userSettings_.NumberOfShadows;
 	ubo.Width = userSettings_.Width;
 	ubo.Height = userSettings_.Height;
 	// RANDOM SEED
@@ -99,7 +102,10 @@ void RayTracer::CreateSwapChain()
 {
 	Application::CreateSwapChain();
 
+	#ifndef OFFSCREEN_RENDERING
 	userInterface_.reset(new UserInterface(CommandPool(), SwapChain(), DepthBuffer(), userSettings_));
+	#endif
+
 	resetAccumulation_ = true;
 
 	CheckFramebufferSize();
@@ -178,7 +184,9 @@ void RayTracer::Render(VkCommandBuffer commandBuffer, const uint32_t imageIndex)
 		stats.TotalSamples = totalNumberOfSamples_;
 	}
 
+	#ifndef OFFSCREEN_RENDERING
 	userInterface_->Render(commandBuffer, SwapChainFrameBuffer(imageIndex), stats);
+	#endif
 }
 
 void RayTracer::OnKey(int key, int scancode, int action, int mods)

@@ -169,8 +169,13 @@ void Application::DrawFrame()
 
 	inFlightFence.Wait(noTimeout);
 
+	#ifdef OFFSCREEN_RENDERING
+	uint32_t imageIndex = 0;
+	auto result = VK_SUCCESS;
+	#else
 	uint32_t imageIndex;
 	auto result = vkAcquireNextImageKHR(device_->Handle(), swapChain_->Handle(), noTimeout, imageAvailableSemaphore, nullptr, &imageIndex);
+	#endif
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || isWireFrame_ != graphicsPipeline_->IsWireFrame())
 	{
@@ -197,19 +202,28 @@ void Application::DrawFrame()
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
 
+	#ifdef OFFSCREEN_RENDERING
+	submitInfo.waitSemaphoreCount = 0;
+	#else
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
+	#endif
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = commandBuffers;
+	#ifdef OFFSCREEN_RENDERING
+	submitInfo.signalSemaphoreCount = 0;
+	#else
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
+	#endif
 
 	inFlightFence.Reset();
 
 	Check(vkQueueSubmit(device_->GraphicsQueue(), 1, &submitInfo, inFlightFence.Handle()),
 		"submit draw command buffer");
 
+	#ifndef OFFSCREEN_RENDERING
 	VkSwapchainKHR swapChains[] = { swapChain_->Handle() };
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -232,6 +246,7 @@ void Application::DrawFrame()
 	{
 		Throw(std::runtime_error(std::string("failed to present next image (") + ToString(result) + ")"));
 	}
+	#endif
 
 	currentFrame_ = (currentFrame_ + 1) % inFlightFences_.size();
 }

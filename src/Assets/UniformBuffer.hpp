@@ -20,12 +20,15 @@ namespace Assets
 		glm::mat4 Projection;
 		glm::mat4 ModelViewInverse;
 		glm::mat4 ProjectionInverse;
+		glm::vec3 LightPosition;
+		float LightRadius;
 		float Aperture;
 		float FocusDistance;
 		float HeatmapScale;
 		uint32_t TotalNumberOfSamples;
 		uint32_t NumberOfSamples;
 		uint32_t NumberOfBounces;
+		uint32_t NumberOfShadows;
 		uint32_t RandomSeed;
 		uint32_t Width;
 		uint32_t Height;

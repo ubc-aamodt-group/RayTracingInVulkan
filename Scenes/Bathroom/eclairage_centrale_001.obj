@@ -1,0 +1,12 @@
+# Blender 3.5.1
+# www.blender.org
+mtllib eclairage_centrale_001.mtl
+o eclairage_centrale.001
+v -15.331659 31.282499 14.198849
+v 15.222404 30.957857 13.566903
+v -15.278345 31.282499 16.776546
+v 15.275718 30.957857 16.144600
+vn -0.0106 -0.9999 0.0002
+s 0
+usemtl emit_central.002
+f 3//1 1//1 2//1 4//1

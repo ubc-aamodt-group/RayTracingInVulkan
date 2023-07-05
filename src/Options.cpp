@@ -20,6 +20,7 @@ Options::Options(const int argc, const char* argv[])
 	renderer.add_options()
 		("samples", value<uint32_t>(&Samples)->default_value(8), "The number of ray samples per pixel.")
 		("bounces", value<uint32_t>(&Bounces)->default_value(16), "The maximum number of bounces per ray.")
+		("shadowrays", value<uint32_t>(&ShadowRays)->default_value(16), "The number of shadow rays to trace per primary intersection.")
 		("max-samples", value<uint32_t>(&MaxSamples)->default_value(64 * 1024), "The maximum number of accumulated ray samples per pixel.")
 		("shader-type", value<uint32_t>(&ShaderType)->default_value(0), "The type of .rgen shader to use.")
 		;

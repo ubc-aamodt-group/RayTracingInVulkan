@@ -20,6 +20,8 @@ public:
 	struct CameraInitialSate
 	{
 		glm::mat4 ModelView;
+		glm::vec3 LightPosition;
+		float LightRadius;
 		float FieldOfView;
 		float Aperture;
 		float FocusDistance;
@@ -34,10 +36,30 @@ public:
 	static SceneAssets LucyInOneWeekend(CameraInitialSate& camera);
 	static SceneAssets CornellBox(CameraInitialSate& camera);
 	static SceneAssets CornellBoxLucy(CameraInitialSate& camera);
+	static SceneAssets CubesAndCommonScene(CameraInitialSate& camera);
+	static SceneAssets CylinderCubesCommonScene(CameraInitialSate& camera);
+	// static SceneAssets TestScene(CameraInitialSate& camera);
+	static SceneAssets TreesAndGrass(CameraInitialSate& camera);
+	static SceneAssets blender_2_78(CameraInitialSate& camera);
+	static SceneAssets blender_3_2(CameraInitialSate& camera);
+	static SceneAssets blender_2_77(CameraInitialSate& camera);
+	static SceneAssets blender_2_80(CameraInitialSate& camera);
+	static SceneAssets blender_2_83(CameraInitialSate& camera);
+	static SceneAssets blender_2_90(CameraInitialSate& camera);
+	static SceneAssets blender_2_91(CameraInitialSate& camera);
+	static SceneAssets TestScene(CameraInitialSate& camera);
+	// static SceneAssets blender_3_3(CameraInitialSate& camera);
 	static SceneAssets SimpleTest(CameraInitialSate& camera);
 	static SceneAssets Bunny(CameraInitialSate& camera);
 	static SceneAssets Carnival(CameraInitialSate& camera);
 	static SceneAssets Ship(CameraInitialSate& camera);
+	static SceneAssets Sponza(CameraInitialSate& camera);
+	static SceneAssets Chestnut(CameraInitialSate& camera);
+	static SceneAssets MandelbulbScene(CameraInitialSate& camera);
+	// static SceneAssets Sibenik(CameraInitialSate& camera);
+	// static SceneAssets Exterior(CameraInitialSate& camera);
+	static SceneAssets ReflectiveCornellBoxLucy(CameraInitialSate& camera);
+	static SceneAssets Bathroom(CameraInitialSate& camera);
 
 	static const std::vector<std::pair<std::string, std::function<SceneAssets (CameraInitialSate&)>>> AllScenes;
 };

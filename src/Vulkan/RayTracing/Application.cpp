@@ -68,7 +68,8 @@ void Application::SetPhysicalDevice(
 	{	
 		VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
 		VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-		VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
+		VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+		//"VK_KHR_shader_non_semantic_info"
 	});
 
 	// Required device features.
@@ -150,11 +151,11 @@ void Application::CreateSwapChain()
 
 	const std::vector<ShaderBindingTable::Entry> rayGenPrograms = { {rayTracingPipeline_->RayGenShaderIndex(), {}} };
 	const std::vector<ShaderBindingTable::Entry> missPrograms = { {rayTracingPipeline_->MissShaderIndex(), {}} };
-	#ifdef USE_PROCEDURALS
-	const std::vector<ShaderBindingTable::Entry> hitGroups = { {rayTracingPipeline_->TriangleHitGroupIndex(), {}}, {rayTracingPipeline_->ProceduralHitGroupIndex(), {}} };
-	#else
+#ifdef USE_PROCEDURALS
+	const std::vector<ShaderBindingTable::Entry> hitGroups = { {rayTracingPipeline_->TriangleHitGroupIndex(), {}},{rayTracingPipeline_->ProceduralHitGroupIndex(), {}}, {rayTracingPipeline_->ProceduralCubeHitGroupIndex(), {}}, {rayTracingPipeline_->ProceduralCylinderHitGroupIndex(), {}}/*, {rayTracingPipeline_->ProceduralMandelbulbHitGroupIndex(), {}}*/ };
+#else
 	const std::vector<ShaderBindingTable::Entry> hitGroups = { {rayTracingPipeline_->TriangleHitGroupIndex(), {}} };
-	#endif
+#endif
 	shaderBindingTable_.reset(new ShaderBindingTable(*deviceProcedures_, *rayTracingPipeline_, *rayTracingProperties_, rayGenPrograms, missPrograms, hitGroups));
 }
 
@@ -265,9 +266,23 @@ void Application::CreateBottomLevelStructures(VkCommandBuffer commandBuffer)
 		const auto indexCount = static_cast<uint32_t>(model.NumberOfIndices());
 		BottomLevelGeometry geometries;
 		
-		model.Procedural()
+		if (model.Procedural())
+			geometries.AddGeometryAabb(scene, aabbOffset, 1, true);
+		else if (model.ProceduralCube())
+			geometries.AddGeometryCubeAabb(scene, aabbOffset, 1, true);
+		else if (model.ProceduralCylinder())
+			geometries.AddGeometryCylinderAabb(scene, aabbOffset, 1, true);
+		else if (model.ProceduralMandelbulb()) {
+			printf("MANDELBULB OOF!\n");
+			assert(false);
+			geometries.AddGeometryMandelbulbAabb(scene, aabbOffset, 1, true);
+		}
+		else
+			geometries.AddGeometryTriangles(scene, vertexOffset, vertexCount, indexOffset, indexCount, true);
+
+		/*model.Procedural()
 			? geometries.AddGeometryAabb(scene, aabbOffset, 1, true)
-			: geometries.AddGeometryTriangles(scene, vertexOffset, vertexCount, indexOffset, indexCount, true);
+			: geometries.AddGeometryTriangles(scene, vertexOffset, vertexCount, indexOffset, indexCount, true);*/
 
 		bottomAs_.emplace_back(*deviceProcedures_, *rayTracingProperties_, geometries);
 
@@ -316,13 +331,32 @@ void Application::CreateTopLevelStructures(VkCommandBuffer commandBuffer)
 
 	// Hit group 0: triangles
 	// Hit group 1: procedurals
+	// Hit group 2: proceduralCubes
+	// Hit group 3: proceduralCylinder
+	// Hit group 4: proceduralMandelbulb
+
 	uint32_t instanceId = 0;
 
 	printf("RTV: Adding %ld BLAS instances\n", scene.Models().size());
 	for (const auto& model : scene.Models())
 	{
+		int hitGroupID;
+		if (model.Procedural())
+			hitGroupID = 1;
+		else if (model.ProceduralCube())
+			hitGroupID = 2;
+		else if (model.ProceduralCylinder())
+			hitGroupID = 3;
+		else if (model.ProceduralMandelbulb())
+			hitGroupID = 4;
+		else
+			hitGroupID = 0;
+
 		instances.push_back(TopLevelAccelerationStructure::CreateInstance(
-			bottomAs_[instanceId], glm::mat4(1), instanceId, model.Procedural() ? 1 : 0));
+			bottomAs_[instanceId], glm::mat4(1), instanceId, hitGroupID));
+
+		/*instances.push_back(TopLevelAccelerationStructure::CreateInstance(
+			bottomAs_[instanceId], glm::mat4(1), instanceId, model.Procedural() ? 1 : 0));*/
 		instanceId++;
 	}
 

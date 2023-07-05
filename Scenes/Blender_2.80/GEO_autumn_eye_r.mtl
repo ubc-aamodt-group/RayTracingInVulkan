@@ -1,0 +1,32 @@
+# Blender 3.4.0 MTL File: 'Blender 2.80.blend'
+# www.blender.org
+
+newmtl autumn_eyes_eyeball_black.001
+Kd 0.000000 0.000000 0.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+Pr 1.000000
+Pm 0.000000
+
+newmtl autumn_eyes_eyeball_brown.001
+Kd 0.097319 0.024867 0.015157
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+Pr 1.000000
+Pm 0.000000
+
+newmtl autumn_eyes_eyeball_white.001
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+Pr 1.000000
+Pm 0.000000

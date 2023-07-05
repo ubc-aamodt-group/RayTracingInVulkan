@@ -1,0 +1,12 @@
+# Blender 3.3.1 MTL File: 'Blender 2.blend'
+# www.blender.org
+
+newmtl Eye_edges
+Ns 751.111145
+Ka 1.000000 1.000000 1.000000
+Kd 0.016698 0.003982 0.001957
+Ks 0.403030 0.403030 0.403030
+Ke 0.000000 0.000000 0.000000
+Ni 1.400000
+d 1.000000
+illum 2

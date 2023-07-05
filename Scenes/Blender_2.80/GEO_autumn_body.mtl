@@ -1,0 +1,32 @@
+# Blender 3.4.0 MTL File: 'Blender 2.80.blend'
+# www.blender.org
+
+newmtl autumn_body.002
+Kd 0.091229 0.091229 0.091229
+Ks 0.006223 0.006223 0.006223
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+Pr 0.427039
+Pm 0.000000
+Ps 0.000000
+Pc 0.000000
+Pcr 0.030000
+aniso 0.000000
+anisor 0.000000
+
+newmtl autumn_body_mouth.003
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+Pr 0.500000
+Pm 0.000000
+Ps 0.000000
+Pc 0.000000
+Pcr 0.030000
+aniso 0.000000
+anisor 0.000000
+map_Kd TEX_autumn_body_color.png
