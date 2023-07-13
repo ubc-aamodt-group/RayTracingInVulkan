@@ -58,6 +58,7 @@ void main()
 				break;
 			}
 
+			Ray.bounce = b;
 			traceRayEXT(
 				Scene, gl_RayFlagsOpaqueEXT, 0xff, 
 				0 /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/, 
