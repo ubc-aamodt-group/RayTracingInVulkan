@@ -1,7 +1,6 @@
-
 // Profiling DXR Shaders with Timer Instrumentation
 // https://developer.nvidia.com/blog/profiling-dxr-shaders-with-timer-instrumentation/
-vec3 heatmap(float t)
+vec3 heatmap_visual(float t)
 {
 	const vec3 c[10] = {
 		vec3(0.0f / 255.0f,   2.0f / 255.0f,  91.0f / 255.0f),
@@ -30,4 +29,9 @@ vec3 heatmap(float t)
 
 	const vec3 r = wc * c[cur] + wp * c[prv] + wn * c[nxt];
 	return vec3(clamp(r.x, 0.0f, 1.0f), clamp(r.y, 0.0f, 1.0f), clamp(r.z, 0.0f, 1.0f));
+}
+
+vec3 heatmap_grayscale(float t)
+{
+	return 1.0f - vec3(t, t, t);
 }

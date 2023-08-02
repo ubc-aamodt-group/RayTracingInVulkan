@@ -18,7 +18,9 @@ namespace Vulkan
 		Image& operator = (Image&&) = delete;
 
 		Image(const Device& device, VkExtent2D extent, VkFormat format);
+		Image(const Device& device, VkExtent2D extent, VkFormat format, VkImageLayout layout);
 		Image(const Device& device, VkExtent2D extent, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage);
+		Image(const Device& device, VkExtent2D extent, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageLayout layout);
 		Image(Image&& other) noexcept;
 		~Image();
 

@@ -9,6 +9,7 @@
 #include "Utilities/Exception.hpp"
 #include <algorithm>
 #include <limits>
+#include <memory>
 
 namespace Vulkan {
 
@@ -20,11 +21,11 @@ SwapChain::SwapChain(const class Device& device, const VkPresentModeKHR presentM
 	VkExtent2D extent = device.Surface().Instance().Window().FramebufferSize();
 
 	// default surface format
-	VkSurfaceFormatKHR surfaceFormat = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+	VkSurfaceFormatKHR surfaceFormat = { VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
 
-	Image swapImg(device, extent, surfaceFormat.format);
+	Image swpImg(device, extent, surfaceFormat.format, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 	std::vector<VkImage> images;
-	images.push_back(swapImg.Handle());
+	images.push_back(swpImg.Handle());
 
 	// Use pre-set values for offscreen rendering
 	minImageCount_ = 1u;
@@ -69,7 +70,7 @@ SwapChain::SwapChain(const class Device& device, const VkPresentModeKHR presentM
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;
 	createInfo.imageExtent = extent;
 	createInfo.imageArrayLayers = 1;
-	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	createInfo.preTransform = details.Capabilities.currentTransform;
 	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	createInfo.presentMode = actualPresentMode;

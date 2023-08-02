@@ -5,10 +5,12 @@
 #extension GL_EXT_ray_tracing : require
 // #extension GL_EXT_debug_printf : enable
 
-// #include "Heatmap.glsl"
+#include "Heatmap.glsl"
 #include "Random.glsl"
 #include "RayPayload.glsl"
 #include "UniformBufferObject.glsl"
+
+#define HEATMAP_FUNCTIONALITY 1
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT Scene;
 layout(binding = 1, rgba32f) uniform image2D AccumulationImage;
@@ -20,7 +22,9 @@ layout(location = 0) rayPayloadEXT RayPayload Ray;
 
 void main() 
 {
-	const uint64_t clock = Camera.ShowHeatmap ? clockARB() : 0;
+	#if HEATMAP_FUNCTIONALITY
+	const uint64_t start_clock = Camera.ShowHeatmap ? clockARB() : 0;
+	#endif
 
 	// Initialise separate random seeds for the pixel and the rays.
 	// - pixel: we want the same random seed for each pixel to get a homogeneous anti-aliasing.
@@ -87,8 +91,19 @@ void main()
 
 	pixelColor = accumulatedColor / Camera.TotalNumberOfSamples;
 
+	#if HEATMAP_FUNCTIONALITY
+	const uint64_t end_clock = Camera.ShowHeatmap ? clockARB() : 0;
+
+	const uint64_t delta_clock = (end_clock - start_clock);
+	float heatmap_scale = Camera.HeatmapScale * 1000000;
+	float dt_scaled = float(delta_clock) / heatmap_scale;
+	float dt_clamped = clamp(dt_scaled, 0.0f, 1.0f);
+
 	// Apply raytracing-in-one-weekend gamma correction.
+	pixelColor = Camera.ShowHeatmap ? heatmap_visual(dt_clamped) : sqrt(pixelColor);
+	#else
 	pixelColor = sqrt(pixelColor);
+	#endif
 
 	imageStore(AccumulationImage, ivec2(gl_LaunchIDEXT.xy), vec4(accumulatedColor, 0));
 

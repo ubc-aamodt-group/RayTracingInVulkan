@@ -207,6 +207,8 @@ Model Model::LoadModel(const std::string& filename, std::vector<Texture>& sceneT
 		m.Diffuse = vec4(material.diffuse[0], material.diffuse[1], material.diffuse[2], 1.0);
 		m.DiffuseTextureId = -1;
 
+		printf("RTV: Material Name: %s\n", material.name.c_str());
+
 		const std::string tex_name = material.diffuse_texname;
 		if (!tex_name.empty())
 		{
@@ -285,6 +287,7 @@ Model Model::LoadModel(const std::string& filename, std::vector<Texture>& sceneT
 			int32_t material_index = mesh.material_ids[material_id_index];
 			faceId++;
 			vertex.MaterialIndex = std::max(0, material_index);
+			// printf("RTV: Material Index: %d\n", vertex.MaterialIndex);
 
 			if (uniqueVertices.count(vertex) == 0)
 			{

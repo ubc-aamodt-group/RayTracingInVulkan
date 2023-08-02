@@ -1,5 +1,6 @@
 #include "Fence.hpp"
 #include "Device.hpp"
+#include <cstdio>
 
 namespace Vulkan {
 

@@ -56,6 +56,7 @@ public:
 	static SceneAssets Sponza(CameraInitialSate& camera);
 	static SceneAssets San_Miguel(CameraInitialSate& camera);
 	static SceneAssets Chestnut(CameraInitialSate& camera);
+	static SceneAssets ChestnutOther(CameraInitialSate& camera);
 	static SceneAssets MandelbulbScene(CameraInitialSate& camera);
 	// static SceneAssets Sibenik(CameraInitialSate& camera);
 	// static SceneAssets Exterior(CameraInitialSate& camera);

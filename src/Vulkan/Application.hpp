@@ -62,6 +62,8 @@ namespace Vulkan
 		virtual void DrawFrame();
 		virtual void Render(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
+		virtual void TakeScreenshot(std::string filename, uint32_t imageIndex);
+
 		virtual void OnKey(int key, int scancode, int action, int mods) { }
 		virtual void OnCursorPosition(double xpos, double ypos) { }
 		virtual void OnMouseButton(int button, int action, int mods) { }
@@ -93,6 +95,7 @@ namespace Vulkan
 		std::vector<class Fence> inFlightFences_;
 
 		size_t currentFrame_{};
+		// size_t iterNum{};
 	};
 
 }

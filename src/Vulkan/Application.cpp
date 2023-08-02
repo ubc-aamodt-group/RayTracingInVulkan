@@ -8,6 +8,8 @@
 #include "Fence.hpp"
 #include "FrameBuffer.hpp"
 #include "GraphicsPipeline.hpp"
+#include "Image.hpp"
+#include "SingleTimeCommands.hpp"
 #include "Instance.hpp"
 #include "PipelineLayout.hpp"
 #include "RenderPass.hpp"
@@ -20,6 +22,9 @@
 #include "Assets/UniformBuffer.hpp"
 #include "Utilities/Exception.hpp"
 #include <array>
+#include <cstdlib>
+#include <fstream>
+#include <unistd.h>
 
 namespace Vulkan {
 
@@ -93,6 +98,7 @@ void Application::Run()
 	}
 
 	currentFrame_ = 0;
+	// iterNum = 0;
 
 	window_->DrawFrame = [this]() { DrawFrame(); };
 	window_->OnKey = [this](const int key, const int scancode, const int action, const int mods) { OnKey(key, scancode, action, mods); };
@@ -204,6 +210,7 @@ void Application::DrawFrame()
 
 	#ifdef OFFSCREEN_RENDERING
 	submitInfo.waitSemaphoreCount = 0;
+	submitInfo.pWaitSemaphores = waitSemaphores;
 	#else
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
@@ -212,7 +219,8 @@ void Application::DrawFrame()
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = commandBuffers;
 	#ifdef OFFSCREEN_RENDERING
-	submitInfo.signalSemaphoreCount = 0;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
 	#else
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
@@ -248,7 +256,16 @@ void Application::DrawFrame()
 	}
 	#endif
 
+	// if (iterNum >= 40)
+	// {
+	// 	sleep(12);
+	//
+	inFlightFence.Wait(noTimeout);
+	TakeScreenshot("/home/ggc/ray_tracing/RayTracingInVulkan/build/linux/bin/heatmap.ppm", imageIndex);
+	// }
+
 	currentFrame_ = (currentFrame_ + 1) % inFlightFences_.size();
+	// iterNum++;
 }
 
 void Application::Render(VkCommandBuffer commandBuffer, const uint32_t imageIndex)
@@ -295,6 +312,156 @@ void Application::Render(VkCommandBuffer commandBuffer, const uint32_t imageInde
 		}
 	}
 	vkCmdEndRenderPass(commandBuffer);
+}
+
+void Application::TakeScreenshot(std::string filename, uint32_t imageIndex)
+{
+	// VkFormatProperties formatProps;
+	//
+	// vkGetPhysicalDeviceFormatProperties(device_->PhysicalDevice(), swapChain_->Format(), &formatProps);
+	// if (!(formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT)) {
+	// 	printf("No support for blitting from optimal tiled images\n");
+	// }
+	//
+	// vkGetPhysicalDeviceFormatProperties(device_->PhysicalDevice(), VK_FORMAT_R8G8B8_UNORM, &formatProps);
+	// if (!(formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+	// 	printf("No support for blitting to linearly tiled images\n");
+	// }
+
+	const uint32_t width = swapChain_->Extent().width;
+	const uint32_t height = swapChain_->Extent().height;
+
+	Image dstImageAbs(
+		Device(),
+		swapChain_->Extent(),
+		VK_FORMAT_R8G8B8A8_UNORM,
+		VK_IMAGE_TILING_LINEAR,
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+	VkImage srcImg = swapChain_->Images()[imageIndex];
+
+	// dstImageAbs.TransitionImageLayout(CommandPool(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	// swapChain_->OffscreenImage()->TransitionImageLayout(CommandPool(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+	SingleTimeCommands::Submit(CommandPool(), [&](VkCommandBuffer commandBuffer)
+	{
+		VkImageMemoryBarrier barrier = {};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = dstImageAbs.Handle();
+		barrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+	});
+
+	SingleTimeCommands::Submit(CommandPool(), [&](VkCommandBuffer commandBuffer)
+	{
+		VkImageMemoryBarrier barrier = {};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = srcImg;
+		barrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+	});
+
+	SingleTimeCommands::Submit(CommandPool(), [&](VkCommandBuffer commandBuffer)
+	{
+		VkOffset3D blitSize;
+		blitSize.x = width;
+		blitSize.y = height;
+		blitSize.z = 1;
+
+		VkImageBlit imageBlitRegion{};
+		imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageBlitRegion.srcSubresource.layerCount = 1;
+		imageBlitRegion.srcOffsets[1] = blitSize;
+		imageBlitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageBlitRegion.dstSubresource.layerCount = 1;
+		imageBlitRegion.dstOffsets[1] = blitSize;
+
+		vkCmdBlitImage(
+			commandBuffer,
+			srcImg, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			dstImageAbs.Handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1,
+			&imageBlitRegion,
+			VK_FILTER_NEAREST);
+	});
+
+	// dstImageAbs.TransitionImageLayout(CommandPool(), VK_IMAGE_LAYOUT_GENERAL);
+	SingleTimeCommands::Submit(CommandPool(), [&](VkCommandBuffer commandBuffer)
+	{
+		VkImageMemoryBarrier barrier = {};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = dstImageAbs.Handle();
+		barrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+	});
+
+	SingleTimeCommands::Submit(CommandPool(), [&](VkCommandBuffer commandBuffer)
+	{
+		VkImageMemoryBarrier barrier = {};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = srcImg;
+		barrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+	});
+
+	DeviceMemory dstImageMem = dstImageAbs.AllocateMemory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	VkImageSubresource subResource { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
+	VkSubresourceLayout subResourceLayout;
+	vkGetImageSubresourceLayout(Device().Handle(), dstImageAbs.Handle(), &subResource, &subResourceLayout);
+
+	// const uint8_t *data = (const uint8_t*) dstImageMem.Map(0, VK_WHOLE_SIZE);
+	const uint8_t *data;
+	vkMapMemory(Device().Handle(), dstImageMem.Handle(), 0, VK_WHOLE_SIZE, 0, (void**) &data);
+	data += subResourceLayout.offset;
+
+	std::ofstream file(filename, std::ios::out | std::ios::binary);
+
+	file << "P6\n" << width << "\n" << height << "\n" << 255 << "\n";
+
+	for (uint32_t y = 0; y < height; y++)
+	{
+		uint8_t *row = (uint8_t*)data;
+		for (uint32_t x = 0; x < width; x++)
+		{
+			printf("%d %d %d\n", row[0], row[1], row[2]);	
+			file << row[0] << ' ' << row[1] << ' ' << row[2] << '\n';
+			row += 4;
+		}
+		data += subResourceLayout.rowPitch;
+	}
+	file.close();
+
+	printf("Screenshot saved to disk");
+
+	vkUnmapMemory(Device().Handle(), dstImageMem.Handle());
 }
 
 void Application::UpdateUniformBuffer(const uint32_t imageIndex)

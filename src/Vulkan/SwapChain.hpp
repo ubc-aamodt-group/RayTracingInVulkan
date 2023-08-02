@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Image.hpp"
 #include "Vulkan.hpp"
 #include <memory>
 #include <vector>
@@ -27,6 +28,8 @@ namespace Vulkan
 		const VkExtent2D& Extent() const { return extent_; }
 		VkFormat Format() const { return format_; }
 		VkPresentModeKHR PresentMode() const { return presentMode_; }
+
+		Image *offscreenSwapImg;
 
 	private:
 

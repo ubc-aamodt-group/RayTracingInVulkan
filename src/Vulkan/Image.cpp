@@ -12,6 +12,11 @@ Image::Image(const class Device& device, const VkExtent2D extent, const VkFormat
 {
 }
 
+Image::Image(const class Device& device, const VkExtent2D extent, const VkFormat format, const VkImageLayout layout) :
+	Image(device, extent, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, layout)
+{
+}
+
 Image::Image(
 	const class Device& device, 
 	const VkExtent2D extent,
@@ -22,6 +27,39 @@ Image::Image(
 	extent_(extent),
 	format_(format),
 	imageLayout_(VK_IMAGE_LAYOUT_UNDEFINED)
+{
+	VkImageCreateInfo imageInfo = {};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageInfo.extent.width = extent.width;
+	imageInfo.extent.height = extent.height;
+	imageInfo.extent.depth = 1;
+	imageInfo.mipLevels = 1;
+	imageInfo.arrayLayers = 1;
+	imageInfo.format = format;
+	imageInfo.tiling = tiling;
+	imageInfo.initialLayout = imageLayout_;
+	imageInfo.usage = usage;
+	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.flags = 0; // Optional
+
+	Check(vkCreateImage(device.Handle(), &imageInfo, nullptr, &image_),
+		"create image");
+	printf("RTV: Creating image at %p\n", image_);
+}
+
+Image::Image(
+	const class Device& device, 
+	const VkExtent2D extent,
+	const VkFormat format,
+	const VkImageTiling tiling,
+	const VkImageUsageFlags usage,
+	const VkImageLayout layout) :
+	device_(device),
+	extent_(extent),
+	format_(format),
+	imageLayout_(layout)
 {
 	VkImageCreateInfo imageInfo = {};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
