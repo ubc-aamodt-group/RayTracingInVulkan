@@ -23,6 +23,8 @@ Options::Options(const int argc, const char* argv[])
 		("shadowrays", value<uint32_t>(&ShadowRays)->default_value(16), "The number of shadow rays to trace per primary intersection.")
 		("max-samples", value<uint32_t>(&MaxSamples)->default_value(64 * 1024), "The maximum number of accumulated ray samples per pixel.")
 		("shader-type", value<uint32_t>(&ShaderType)->default_value(0), "The type of .rgen shader to use.")
+		// ("heatmap", bool_switch(&ShowHeatmap)->default_value(false), "Show the heatmap")
+		// ("no-overlay", bool_switch(&ShowOverlay)->default_value(true), "Show overlay")
 		;
 
 	options_description scene("Scene options", lineLength);

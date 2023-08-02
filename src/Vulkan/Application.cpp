@@ -183,6 +183,8 @@ void Application::DrawFrame()
 	auto result = vkAcquireNextImageKHR(device_->Handle(), swapChain_->Handle(), noTimeout, imageAvailableSemaphore, nullptr, &imageIndex);
 	#endif
 
+	TakeScreenshot("/home/ggc/ray_tracing/RayTracingInVulkan/build/linux/bin/heatmap.ppm", imageIndex);
+
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || isWireFrame_ != graphicsPipeline_->IsWireFrame())
 	{
 		RecreateSwapChain();
@@ -260,8 +262,6 @@ void Application::DrawFrame()
 	// {
 	// 	sleep(12);
 	//
-	inFlightFence.Wait(noTimeout);
-	TakeScreenshot("/home/ggc/ray_tracing/RayTracingInVulkan/build/linux/bin/heatmap.ppm", imageIndex);
 	// }
 
 	currentFrame_ = (currentFrame_ + 1) % inFlightFences_.size();
@@ -328,6 +328,8 @@ void Application::TakeScreenshot(std::string filename, uint32_t imageIndex)
 	// 	printf("No support for blitting to linearly tiled images\n");
 	// }
 
+	// printf("Image indx to capture: %d\n", imageIndex);
+
 	const uint32_t width = swapChain_->Extent().width;
 	const uint32_t height = swapChain_->Extent().height;
 
@@ -338,10 +340,17 @@ void Application::TakeScreenshot(std::string filename, uint32_t imageIndex)
 		VK_IMAGE_TILING_LINEAR,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
+	DeviceMemory dstImageMem = dstImageAbs.AllocateMemory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	VkImageSubresource subResource { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
+	VkSubresourceLayout subResourceLayout;
+	vkGetImageSubresourceLayout(Device().Handle(), dstImageAbs.Handle(), &subResource, &subResourceLayout);
+
 	VkImage srcImg = swapChain_->Images()[imageIndex];
 
 	// dstImageAbs.TransitionImageLayout(CommandPool(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	// swapChain_->OffscreenImage()->TransitionImageLayout(CommandPool(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
 	SingleTimeCommands::Submit(CommandPool(), [&](VkCommandBuffer commandBuffer)
 	{
 		VkImageMemoryBarrier barrier = {};
@@ -352,114 +361,95 @@ void Application::TakeScreenshot(std::string filename, uint32_t imageIndex)
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.image = dstImageAbs.Handle();
 		barrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
 		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-	});
 
-	SingleTimeCommands::Submit(CommandPool(), [&](VkCommandBuffer commandBuffer)
-	{
-		VkImageMemoryBarrier barrier = {};
-		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.image = srcImg;
-		barrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		VkClearColorValue color = { .float32 = {1.0, 0.0, 0.0} };
+		VkImageSubresourceRange imageSubresourceRange { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		vkCmdClearColorImage(commandBuffer, dstImageAbs.Handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1, &imageSubresourceRange);
 
-		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-	});
+		VkImageMemoryBarrier barrier2 = {};
+		barrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier2.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		barrier2.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier2.image = srcImg;
+		barrier2.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		barrier2.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		barrier2.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-	SingleTimeCommands::Submit(CommandPool(), [&](VkCommandBuffer commandBuffer)
-	{
-		VkOffset3D blitSize;
-		blitSize.x = width;
-		blitSize.y = height;
-		blitSize.z = 1;
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier2);
 
-		VkImageBlit imageBlitRegion{};
-		imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		imageBlitRegion.srcSubresource.layerCount = 1;
-		imageBlitRegion.srcOffsets[1] = blitSize;
-		imageBlitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		imageBlitRegion.dstSubresource.layerCount = 1;
-		imageBlitRegion.dstOffsets[1] = blitSize;
+		VkImageCopy imageCopyRegion{};
+		imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageCopyRegion.srcSubresource.layerCount = 1;
+		imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageCopyRegion.dstSubresource.layerCount = 1;
+		imageCopyRegion.extent.width = width;
+		imageCopyRegion.extent.height = height;
+		imageCopyRegion.extent.depth = 1;
 
-		vkCmdBlitImage(
+		// Issue the copy command
+		vkCmdCopyImage(
 			commandBuffer,
 			srcImg, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 			dstImageAbs.Handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			1,
-			&imageBlitRegion,
-			VK_FILTER_NEAREST);
+			&imageCopyRegion);
+
+		VkImageMemoryBarrier barrier3 = {};
+		barrier3.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier3.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier3.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+		barrier3.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier3.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier3.image = dstImageAbs.Handle();
+		barrier3.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		barrier3.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier3.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier3);
+
+		VkImageMemoryBarrier barrier4 = {};
+		barrier4.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier4.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier4.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		barrier4.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier4.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier4.image = srcImg;
+		barrier4.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		barrier4.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		barrier4.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier4);
 	});
-
-	// dstImageAbs.TransitionImageLayout(CommandPool(), VK_IMAGE_LAYOUT_GENERAL);
-	SingleTimeCommands::Submit(CommandPool(), [&](VkCommandBuffer commandBuffer)
-	{
-		VkImageMemoryBarrier barrier = {};
-		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.image = dstImageAbs.Handle();
-		barrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-	});
-
-	SingleTimeCommands::Submit(CommandPool(), [&](VkCommandBuffer commandBuffer)
-	{
-		VkImageMemoryBarrier barrier = {};
-		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.image = srcImg;
-		barrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-	});
-
-	DeviceMemory dstImageMem = dstImageAbs.AllocateMemory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-	VkImageSubresource subResource { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
-	VkSubresourceLayout subResourceLayout;
-	vkGetImageSubresourceLayout(Device().Handle(), dstImageAbs.Handle(), &subResource, &subResourceLayout);
 
 	// const uint8_t *data = (const uint8_t*) dstImageMem.Map(0, VK_WHOLE_SIZE);
 	const uint8_t *data;
-	vkMapMemory(Device().Handle(), dstImageMem.Handle(), 0, VK_WHOLE_SIZE, 0, (void**) &data);
+	Check(vkMapMemory(Device().Handle(), dstImageMem.Handle(), 0, VK_WHOLE_SIZE, 0, (void**) &data), "map memory");
 	data += subResourceLayout.offset;
 
 	std::ofstream file(filename, std::ios::out | std::ios::binary);
 
-	file << "P6\n" << width << "\n" << height << "\n" << 255 << "\n";
+	file << "P3\n" << width << "\n" << height << "\n" << 255 << "\n";
 
 	for (uint32_t y = 0; y < height; y++)
 	{
 		uint8_t *row = (uint8_t*)data;
 		for (uint32_t x = 0; x < width; x++)
 		{
-			printf("%d %d %d\n", row[0], row[1], row[2]);	
-			file << row[0] << ' ' << row[1] << ' ' << row[2] << '\n';
+			// printf("%d %d %d\n", row[2], row[1], row[0]);	
+			file << (uint32_t) row[2] << ' ' << (uint32_t) row[1] << ' ' << (uint32_t) row[0] << '\n';
 			row += 4;
 		}
 		data += subResourceLayout.rowPitch;
 	}
 	file.close();
 
-	printf("Screenshot saved to disk");
+	printf("Screenshot saved to disk!\n");
 
 	vkUnmapMemory(Device().Handle(), dstImageMem.Handle());
 }

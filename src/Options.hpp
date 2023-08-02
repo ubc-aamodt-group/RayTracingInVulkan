@@ -34,6 +34,8 @@ public:
 	uint32_t ShadowRays{};
 	uint32_t MaxSamples{};
 	uint32_t ShaderType{};
+	// bool     ShowHeatmap{};
+	// bool     ShowOverlay{};
 
 	// Window options
 	uint32_t Width{};
