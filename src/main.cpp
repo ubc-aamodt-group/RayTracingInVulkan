@@ -111,11 +111,11 @@ namespace
 
 		userSettings.ShaderType = options.ShaderType;
 		
-		userSettings.ShowSettings = !options.Benchmark;
-		userSettings.ShowOverlay = true;
+		userSettings.ShowSettings = false;
+		userSettings.ShowOverlay = !options.ShowOverlay;
 
-		userSettings.ShowHeatmap = false;
-		userSettings.HeatmapScale = 1.5f;
+		userSettings.ShowHeatmap = options.ShowHeatmap;
+		userSettings.HeatmapScale = options.HeatmapScale;
 
 		return userSettings;
 	}

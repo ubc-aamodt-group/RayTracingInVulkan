@@ -24,10 +24,10 @@ namespace
 				!(queueFamily.queueFlags & excludedBits);
 		});
 
-		// if (family == queueFamilies.end())
-		// {
-		// 	Throw(std::runtime_error("found no matching " + name + " queue"));
-		// }
+		if (family == queueFamilies.end())
+		{
+			Throw(std::runtime_error("found no matching " + name + " queue"));
+		}
 
 		return family;
 	}
@@ -83,7 +83,7 @@ Device::Device(
 	{
 		graphicsFamilyIndex_,
 		// computeFamilyIndex_,
-		presentFamilyIndex_,
+		// presentFamilyIndex_,
 		//transferFamilyIndex_
 	};
 
@@ -121,7 +121,7 @@ Device::Device(
 
 	vkGetDeviceQueue(device_, graphicsFamilyIndex_, 0, &graphicsQueue_);
 	// vkGetDeviceQueue(device_, computeFamilyIndex_, 0, &computeQueue_);
-	vkGetDeviceQueue(device_, presentFamilyIndex_, 0, &presentQueue_);
+	// vkGetDeviceQueue(device_, presentFamilyIndex_, 0, &presentQueue_);
 	//vkGetDeviceQueue(device_, transferFamilyIndex_, 0, &transferQueue_);
 }
 

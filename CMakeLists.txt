@@ -19,7 +19,7 @@ endforeach()
 
 set (CMAKE_CXX_STANDARD 17)
 
-# add_definitions(-DOFFSCREEN_RENDERING)
+add_definitions(-DOFFSCREEN_RENDERING)
 
 if (AllowProcedurals)
 	add_definitions(-DUSE_PROCEDURALS)

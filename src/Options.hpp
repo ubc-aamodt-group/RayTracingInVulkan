@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <cstdint>
 #include <exception>
 
@@ -34,8 +35,14 @@ public:
 	uint32_t ShadowRays{};
 	uint32_t MaxSamples{};
 	uint32_t ShaderType{};
-	// bool     ShowHeatmap{};
-	// bool     ShowOverlay{};
+	float    HeatmapScale{};
+	bool     ShowHeatmap{};
+	bool     ShowOverlay{};
+
+	// Screenshot Options
+	std::string ScreenshotPath{};
+	uint32_t WaitFrames{};
+	bool AbortAfterScreenshot{};
 
 	// Window options
 	uint32_t Width{};

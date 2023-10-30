@@ -57,6 +57,8 @@ namespace Vulkan
 		VkExtent2D extent_{};
 		std::vector<VkImage> images_;
 		std::vector<std::unique_ptr<ImageView>> imageViews_;
+		std::unique_ptr<Image> swpImg;
+		std::unique_ptr<DeviceMemory> swpImgMem;
 	};
 
 }

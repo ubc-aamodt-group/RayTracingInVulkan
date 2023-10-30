@@ -21,11 +21,46 @@ SwapChain::SwapChain(const class Device& device, const VkPresentModeKHR presentM
 	VkExtent2D extent = device.Surface().Instance().Window().FramebufferSize();
 
 	// default surface format
+	// VkSurfaceFormatKHR surfaceFormat = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
 	VkSurfaceFormatKHR surfaceFormat = { VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
 
-	Image swpImg(device, extent, surfaceFormat.format, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+	printf("CREATED IMAGE!\n");
+	swpImg = 
+		std::make_unique<Image>(
+			device,
+			extent,
+			surfaceFormat.format,
+			VK_IMAGE_TILING_LINEAR,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+	Image swpImg2(device, extent, surfaceFormat.format);
+	printf("%d %d\n", extent.width, extent.height);
 	std::vector<VkImage> images;
-	images.push_back(swpImg.Handle());
+	images.push_back(swpImg->Handle());
+
+	swpImgMem = 
+		std::make_unique<DeviceMemory>(
+			swpImg->AllocateMemory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+
+	// images_.push_back(NULL);
+	//
+	// VkImageCreateInfo imageInfo = {};
+	// imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	// imageInfo.imageType = VK_IMAGE_TYPE_2D;
+	// imageInfo.extent.width = extent.width;
+	// imageInfo.extent.height = extent.height;
+	// imageInfo.extent.depth = 1;
+	// imageInfo.mipLevels = 1;
+	// imageInfo.arrayLayers = 1;
+	// imageInfo.format = surfaceFormat.format;
+	// imageInfo.tiling = VK_IMAGE_TILING_LINEAR;
+	// imageInfo.initialLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR;
+	// imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	// imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	// imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	// imageInfo.flags = 0; // Optional
+	//
+	// Check(vkCreateImage(device.Handle(), &imageInfo, nullptr, images_.data()),
+	// 	"create image");
 
 	// Use pre-set values for offscreen rendering
 	minImageCount_ = 1u;
@@ -34,6 +69,9 @@ SwapChain::SwapChain(const class Device& device, const VkPresentModeKHR presentM
 	extent_ = extent;
 	images_ = images;
 	imageViews_.reserve(images_.size());
+
+	printf("Size images_ : %ld\n", images_.size());
+	printf("Src img addr: %p\n", images_[0]);
 
 	for (const auto image : images_)
 	{

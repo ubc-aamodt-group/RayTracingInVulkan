@@ -23,8 +23,9 @@ Options::Options(const int argc, const char* argv[])
 		("shadowrays", value<uint32_t>(&ShadowRays)->default_value(16), "The number of shadow rays to trace per primary intersection.")
 		("max-samples", value<uint32_t>(&MaxSamples)->default_value(64 * 1024), "The maximum number of accumulated ray samples per pixel.")
 		("shader-type", value<uint32_t>(&ShaderType)->default_value(0), "The type of .rgen shader to use.")
-		// ("heatmap", bool_switch(&ShowHeatmap)->default_value(false), "Show the heatmap")
-		// ("no-overlay", bool_switch(&ShowOverlay)->default_value(true), "Show overlay")
+		("heatmap-scale", value<float>(&HeatmapScale)->default_value(1.5f), "The heatmap scale")
+		("show-heatmap", bool_switch(&ShowHeatmap)->default_value(false), "Show the heatmap")
+		("no-overlay", bool_switch(&ShowOverlay)->default_value(true), "Show overlay")
 		;
 
 	options_description scene("Scene options", lineLength);
@@ -44,6 +45,13 @@ Options::Options(const int argc, const char* argv[])
 	desc.add_options()
 		("help", "Display help message.")
 		("benchmark", bool_switch(&Benchmark)->default_value(false), "Run the application in benchmark mode.")
+		;
+
+	options_description screenshot("Screenshot Options");
+	screenshot.add_options()
+		("path", value<std::string>(&ScreenshotPath)->default_value("heatmap.ppm"), "Path to save screenshot to")
+		("wait-frames", value<uint32_t>(&WaitFrames)->default_value(5), "Frames to wait before taking a screenshot")
+		("abort-after-screenshot", value<bool>(&AbortAfterScreenshot)->default_value(false), "Abort after screenshot is taken")
 		;
 
 	desc.add(benchmark);

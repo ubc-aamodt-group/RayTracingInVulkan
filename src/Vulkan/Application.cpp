@@ -173,7 +173,7 @@ void Application::DrawFrame()
 	const auto imageAvailableSemaphore = imageAvailableSemaphores_[currentFrame_].Handle();
 	const auto renderFinishedSemaphore = renderFinishedSemaphores_[currentFrame_].Handle();
 
-	inFlightFence.Wait(noTimeout);
+	// inFlightFence.Wait(noTimeout);
 
 	#ifdef OFFSCREEN_RENDERING
 	uint32_t imageIndex = 0;
@@ -183,7 +183,9 @@ void Application::DrawFrame()
 	auto result = vkAcquireNextImageKHR(device_->Handle(), swapChain_->Handle(), noTimeout, imageAvailableSemaphore, nullptr, &imageIndex);
 	#endif
 
-	TakeScreenshot("/home/ggc/ray_tracing/RayTracingInVulkan/build/linux/bin/heatmap.ppm", imageIndex);
+	// #ifndef OFFSCREEN_RENDERING
+	// TakeScreenshot("./heatmap.ppm", imageIndex);
+	// #endif
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || isWireFrame_ != graphicsPipeline_->IsWireFrame())
 	{
@@ -230,8 +232,14 @@ void Application::DrawFrame()
 
 	inFlightFence.Reset();
 
-	Check(vkQueueSubmit(device_->GraphicsQueue(), 1, &submitInfo, inFlightFence.Handle()),
+	VkResult r = vkQueueSubmit(device_->GraphicsQueue(), 1, &submitInfo, inFlightFence.Handle());
+	printf("RES: %d\n", r);
+	Check(r,
 		"submit draw command buffer");
+
+	inFlightFence.Wait(noTimeout);
+
+	TakeScreenshot("./heatmap.ppm", imageIndex);
 
 	#ifndef OFFSCREEN_RENDERING
 	VkSwapchainKHR swapChains[] = { swapChain_->Handle() };
@@ -258,14 +266,14 @@ void Application::DrawFrame()
 	}
 	#endif
 
-	// if (iterNum >= 40)
-	// {
-	// 	sleep(12);
-	//
-	// }
+	if (iterNum >= 12)
+	{
+		exit(0);
+	}
+
+	iterNum++;
 
 	currentFrame_ = (currentFrame_ + 1) % inFlightFences_.size();
-	// iterNum++;
 }
 
 void Application::Render(VkCommandBuffer commandBuffer, const uint32_t imageIndex)
@@ -366,22 +374,26 @@ void Application::TakeScreenshot(std::string filename, uint32_t imageIndex)
 
 		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-		VkClearColorValue color = { .float32 = {1.0, 0.0, 0.0} };
+		VkClearColorValue color = { .float32 = {1.0, 0.0, 1.0} };
 		VkImageSubresourceRange imageSubresourceRange { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 		vkCmdClearColorImage(commandBuffer, dstImageAbs.Handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1, &imageSubresourceRange);
 
+		#ifndef OFFSCREEN_RENDERING
 		VkImageMemoryBarrier barrier2 = {};
 		barrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		barrier2.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		//barrier2.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		barrier2.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier2.image = srcImg;
 		barrier2.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 		barrier2.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		// barrier2.srcAccessMask = 0;
 		barrier2.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
 		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier2);
+		#endif
 
 		VkImageCopy imageCopyRegion{};
 		imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -413,18 +425,22 @@ void Application::TakeScreenshot(std::string filename, uint32_t imageIndex)
 
 		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier3);
 
+		#ifndef OFFSCREEN_RENDERING
 		VkImageMemoryBarrier barrier4 = {};
 		barrier4.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		barrier4.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		barrier4.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		//barrier4.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		barrier4.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier4.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier4.image = srcImg;
 		barrier4.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 		barrier4.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 		barrier4.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		// barrier4.dstAccessMask = 0;
 
 		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier4);
+		#endif
 	});
 
 	// const uint8_t *data = (const uint8_t*) dstImageMem.Map(0, VK_WHOLE_SIZE);
@@ -441,8 +457,12 @@ void Application::TakeScreenshot(std::string filename, uint32_t imageIndex)
 		uint8_t *row = (uint8_t*)data;
 		for (uint32_t x = 0; x < width; x++)
 		{
-			// printf("%d %d %d\n", row[2], row[1], row[0]);	
+			// printf("%d %d %d\n", row[2], row[1], row[0]);
+	   #ifdef OFFSCREEN_RENDERING
+			file << (uint32_t) row[0] << ' ' << (uint32_t) row[1] << ' ' << (uint32_t) row[2] << '\n';
+		#else
 			file << (uint32_t) row[2] << ' ' << (uint32_t) row[1] << ' ' << (uint32_t) row[0] << '\n';
+	   #endif
 			row += 4;
 		}
 		data += subResourceLayout.rowPitch;

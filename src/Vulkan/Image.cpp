@@ -96,6 +96,7 @@ Image::~Image()
 {
 	if (image_ != nullptr)
 	{
+		printf("DELETED IMAGE %d, %d!\n", extent_.width, extent_.height);
 		vkDestroyImage(device_.Handle(), image_, nullptr);
 		image_ = nullptr;
 	}

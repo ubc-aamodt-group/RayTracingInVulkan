@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FrameBuffer.hpp"
+#include "Image.hpp"
 #include "WindowConfig.hpp"
 #include <vector>
 #include <memory>
@@ -95,7 +96,7 @@ namespace Vulkan
 		std::vector<class Fence> inFlightFences_;
 
 		size_t currentFrame_{};
-		// size_t iterNum{};
+		size_t iterNum{};
 	};
 
 }
