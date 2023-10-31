@@ -266,7 +266,7 @@ void Application::DrawFrame()
 	}
 	#endif
 
-	if (iterNum >= 12)
+	if (iterNum >= 30)
 	{
 		exit(0);
 	}

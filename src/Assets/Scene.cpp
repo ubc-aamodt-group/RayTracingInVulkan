@@ -125,6 +125,10 @@ Scene::Scene(Vulkan::CommandPool& commandPool, std::vector<Model>&& models, std:
 	// Vulkan::BufferUtil::CreateDeviceBuffer(commandPool, "MandelbulbAABBs", VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | flags, aabbMandelbulbs, aabbMandelbulbBuffer_, aabbMandelbulbBufferMemory_);
 	// Vulkan::BufferUtil::CreateDeviceBuffer(commandPool, "ProceduralMandelbulbs", flags, proceduralMandelbulbs, proceduralMandelbulbBuffer_, proceduralMandelbulbBufferMemory_);
 
+	std::vector<uint64_t> timings(512*512+2, 1);
+	printf("TIMING: %ld\n", timings[0]);
+	Vulkan::BufferUtil::CreateDeviceBuffer(commandPool, "TracingTimes", flags, timings, traceTimingsBuffer_, traceTimingsBufferMemory_);
+
 	
 	// Upload all textures
 	textureImages_.reserve(textures_.size());
@@ -168,6 +172,9 @@ Scene::~Scene()
 	indexBufferMemory_.reset(); // release memory after bound buffer has been destroyed
 	vertexBuffer_.reset();
 	vertexBufferMemory_.reset(); // release memory after bound buffer has been destroyed
+	
+	traceTimingsBuffer_.reset();
+	traceTimingsBufferMemory_.reset();
 }
 
 }

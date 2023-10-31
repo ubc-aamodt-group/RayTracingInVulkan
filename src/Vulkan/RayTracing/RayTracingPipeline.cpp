@@ -61,6 +61,9 @@ RayTracingPipeline::RayTracingPipeline(
 
 		// Mandelbulb Procedural buffer.
 		// {12, 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR}
+
+		// For timings for each ray
+		{12, 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR}
 	};
 
 	descriptorSetManager_.reset(new DescriptorSetManager(device, descriptorBindings, uniformBuffers.size()));
@@ -112,6 +115,11 @@ RayTracingPipeline::RayTracingPipeline(
 		offsetsBufferInfo.buffer = scene.OffsetsBuffer().Handle();
 		offsetsBufferInfo.range = VK_WHOLE_SIZE;
 
+		// Trace Timings buffer
+		VkDescriptorBufferInfo traceTimingsBufferInfo = {};
+		traceTimingsBufferInfo.buffer = scene.TraceTimingsBuffer().Handle();
+		traceTimingsBufferInfo.range = VK_WHOLE_SIZE;
+
 		// Image and texture samplers.
 		std::vector<VkDescriptorImageInfo> imageInfos(scene.TextureSamplers().size());
 
@@ -133,7 +141,8 @@ RayTracingPipeline::RayTracingPipeline(
 			descriptorSets.Bind(i, 5, indexBufferInfo),
 			descriptorSets.Bind(i, 6, materialBufferInfo),
 			descriptorSets.Bind(i, 7, offsetsBufferInfo),
-			descriptorSets.Bind(i, 8, *imageInfos.data(), static_cast<uint32_t>(imageInfos.size()))
+			descriptorSets.Bind(i, 8, *imageInfos.data(), static_cast<uint32_t>(imageInfos.size())),
+			descriptorSets.Bind(i, 12, traceTimingsBufferInfo)
 		};
 
 		#ifdef USE_PROCEDURALS

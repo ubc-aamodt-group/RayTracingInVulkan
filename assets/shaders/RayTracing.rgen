@@ -16,6 +16,7 @@ layout(binding = 0, set = 0) uniform accelerationStructureEXT Scene;
 layout(binding = 1, rgba32f) uniform image2D AccumulationImage;
 layout(binding = 2, rgba8) uniform image2D OutputImage;
 layout(binding = 3) readonly uniform UniformBufferObjectStruct { UniformBufferObject Camera; };
+layout(binding = 12) buffer TimingsArray { uint64_t Timings[]; };
 
 layout(location = 0) rayPayloadEXT RayPayload Ray;
 
@@ -95,12 +96,27 @@ void main()
 	const uint64_t end_clock = Camera.ShowHeatmap ? clockARB() : 0;
 
 	const uint64_t delta_clock = (end_clock - start_clock);
-	float heatmap_scale = Camera.HeatmapScale * 1000000;
-	float dt_scaled = float(delta_clock) / heatmap_scale;
+	
+	if (Timings[Camera.Width*Camera.Height+1] <= 24) {
+		Timings[gl_LaunchIDEXT.x + Camera.Width*gl_LaunchIDEXT.y] = delta_clock;
+
+		for (int i = 1; i < Camera.Width * Camera.Height; i++) {
+			if (Timings[i] > Timings[Camera.Width*Camera.Height]) {
+				Timings[Camera.Width*Camera.Height] = Timings[i];
+				Timings[Camera.Width*Camera.Height+1] += 1;
+			}
+		}
+	}
+
+	// float heatmap_scale = Camera.HeatmapScale * 1000000;
+	// float heatmap_scale = 500000;
+	// float dt_scaled = float(delta_clock) / heatmap_scale;
+	float dt_scaled = float(delta_clock) / (float(Timings[Camera.Width*Camera.Height]) * 1.1f);
 	float dt_clamped = clamp(dt_scaled, 0.0f, 1.0f);
 
 	// Apply raytracing-in-one-weekend gamma correction.
-	pixelColor = Camera.ShowHeatmap ? heatmap_visual(dt_clamped) : sqrt(pixelColor);
+	// pixelColor = Camera.ShowHeatmap ? heatmap_visual(dt_clamped) : sqrt(pixelColor);
+	pixelColor = Timings[0] == 0 ? vec3(0.0f, 1.0f, 1.0f) : heatmap_visual(dt_clamped);
 	#else
 	pixelColor = sqrt(pixelColor);
 	#endif

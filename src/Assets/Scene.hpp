@@ -48,6 +48,7 @@ namespace Assets
 		const Vulkan::Buffer& ProceduralCubeBuffer() const { return *proceduralCubeBuffer_; }
 		const Vulkan::Buffer& ProceduralCylinderBuffer() const { return *proceduralCylinderBuffer_; }
 		// const Vulkan::Buffer& ProceduralMandelbulbBuffer() const { return *proceduralMandelbulbBuffer_; }
+		const Vulkan::Buffer& TraceTimingsBuffer() const { return *traceTimingsBuffer_; }
 		const std::vector<VkImageView> TextureImageViews() const { return textureImageViewHandles_; }
 		const std::vector<VkSampler> TextureSamplers() const { return textureSamplerHandles_; }
 
@@ -91,6 +92,9 @@ namespace Assets
 
 		// std::unique_ptr<Vulkan::Buffer> proceduralMandelbulbBuffer_;
 		// std::unique_ptr<Vulkan::DeviceMemory> proceduralMandelbulbBufferMemory_;
+
+		std::unique_ptr<Vulkan::Buffer> traceTimingsBuffer_;
+		std::unique_ptr<Vulkan::DeviceMemory> traceTimingsBufferMemory_;
 
 		std::vector<std::unique_ptr<TextureImage>> textureImages_;
 		std::vector<VkImageView> textureImageViewHandles_;
