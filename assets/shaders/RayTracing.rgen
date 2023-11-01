@@ -111,7 +111,7 @@ void main()
 	// float heatmap_scale = Camera.HeatmapScale * 1000000;
 	// float heatmap_scale = 500000;
 	// float dt_scaled = float(delta_clock) / heatmap_scale;
-	float dt_scaled = float(delta_clock) / (float(Timings[Camera.Width*Camera.Height]) * 1.1f);
+	float dt_scaled = float(delta_clock) / (Camera.HeatmapScale * float(Timings[Camera.Width*Camera.Height]));
 	float dt_clamped = clamp(dt_scaled, 0.0f, 1.0f);
 
 	// Apply raytracing-in-one-weekend gamma correction.
