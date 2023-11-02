@@ -21,7 +21,12 @@ SwapChain::SwapChain(const class Device& device, const VkPresentModeKHR presentM
 	VkExtent2D extent = device.Surface().Instance().Window().FramebufferSize();
 
 	// default surface format
-	// VkSurfaceFormatKHR surfaceFormat = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+	#ifdef LAVAPIPE
+	VkSurfaceFormatKHR surfaceFormat = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+	Image swpImg(device, extent, surfaceFormat.format);
+	std::vector<VkImage> images;
+	images.push_back(swpImg.Handle());
+	#else
 	VkSurfaceFormatKHR surfaceFormat = { VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
 
 	printf("CREATED IMAGE!\n");
@@ -32,7 +37,6 @@ SwapChain::SwapChain(const class Device& device, const VkPresentModeKHR presentM
 			surfaceFormat.format,
 			VK_IMAGE_TILING_LINEAR,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-	Image swpImg2(device, extent, surfaceFormat.format);
 	printf("%d %d\n", extent.width, extent.height);
 	std::vector<VkImage> images;
 	images.push_back(swpImg->Handle());
@@ -40,6 +44,7 @@ SwapChain::SwapChain(const class Device& device, const VkPresentModeKHR presentM
 	swpImgMem = 
 		std::make_unique<DeviceMemory>(
 			swpImg->AllocateMemory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+	#endif
 
 	// images_.push_back(NULL);
 	//

@@ -239,7 +239,9 @@ void Application::DrawFrame()
 
 	inFlightFence.Wait(noTimeout);
 
+	#ifndef LAVAPIPE
 	TakeScreenshot("./heatmap.ppm", imageIndex);
+	#endif
 
 	#ifndef OFFSCREEN_RENDERING
 	VkSwapchainKHR swapChains[] = { swapChain_->Handle() };
